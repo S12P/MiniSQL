@@ -1,10 +1,10 @@
-#Projet de M1 DBDM
+# Projet de M1 DBDM
 
-##1 CSV MiniSQL Engine 
+## 1 CSV MiniSQL Engine 
 
 This part is due for 2018-03-14 by mail to Emmanuel Coquery.
 
-###1.1 Relational Algebra Engine Over CSV
+### 1.1 Relational Algebra Engine Over CSV
 
 First, design a data structures to represent:
 
@@ -17,7 +17,7 @@ cartesian product will use nested loops
 all operators will produce data in an eager way
 Note that there are libraries in all proposed languages to read CSV data.
 
-###1.2 MiniSQL to Relational Algebra Compiler (4 point)
+### 1.2 MiniSQL to Relational Algebra Compiler (4 point)
 
 Write an MiniSQL to algebra compiler:
 

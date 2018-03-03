@@ -4,9 +4,9 @@ open Main
 
 %}
 
-%token <string>    VAL
+%token <string> VAL
 %token IN NOT POINT COMMA SELECT FROM WHERE MINUS UNION AS
-%token LT LE GT GE EQ NEQ
+%token LT LE GT GE EQ NEQ AND OR
 %token LPAREN RPAREN
 %token EOL
 
@@ -14,7 +14,7 @@ open Main
 
 
 %start main
-%type <Main.expr > main
+%type <dbdm.requete> main
 %%
 
 main:

@@ -1,4 +1,6 @@
 
+let appartient2 x l1 = match l1 with
+  |t::q -> exists(fun key elmt -> x=elmt, t)
 
 let appartient t1 l1 = match l1 with (*t1 dic*)
   |t::q -> equal( fun a b -> a=b, t1, t)

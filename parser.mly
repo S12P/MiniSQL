@@ -62,7 +62,7 @@ att:
 ;
 
 id:
-  |
+  | VAL
 ;
 
 rels:

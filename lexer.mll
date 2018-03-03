@@ -22,6 +22,5 @@ rule token = parse
   | ">="                      { GE }
   | "="                       { EQ }
   | "AS"                      { AS }
-  | (['0'-'9']+ as i)         { VAL (int_of_string i) }
-  | (['a'-'z''A'-'Z']+ as i)  { IDE i }
+  | [A-Za-z][A-Za-z0-9_]+     { VAL i }
   | eof                       { EOF }

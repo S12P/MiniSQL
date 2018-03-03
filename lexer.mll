@@ -23,4 +23,4 @@ rule token = parse
   | "="                       { EQ }
   | "AS"                      { AS }
   | [A-Za-z][A-Za-z0-9_]+     { VAL i }
-  | eof                       { EOF }
+  | eol                       { EOL }

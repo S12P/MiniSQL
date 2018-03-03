@@ -1,44 +1,23 @@
 %{
 
-open Expr
+open Main
 
 %}
-/* ordre de priorité et de précedence*/
-%token <int>    VAL
-%token <string> IDE
-%token IN
-%token SUB ADD
-%token MUL
+%token <string>    VAL
+%token IN NOT POINT COMMA SELECT FROM WHERE MINUS UNION AS
 %token LT LE GT GE EQ NEQ
 %token LPAREN RPAREN
-%token LET REC
-%token IF THEN ELSE TRY WITH RAISE EX
-%token FUN ARROW
 %token EOL
-%token EOF
 
 
-%nonassoc EOL
-%nonassoc EOF
-%nonassoc TEMP
-%nonassoc LET REC FUN EQ
-%right ARROW
-%nonassoc VAL IDE
-%nonassoc LPAREN RPAREN NEQ GE GT LE LT
-%nonassoc IF THEN ELSE TRY WITH EX
-%right IN
-%left ADD SUB
-%left MUL
-%nonassoc UMINUS
 
 
 %start main
-%type <Expr.expr list> main
+%type <Main.expr > main
 %%
 
 main:
-  | expr EOL main { $1::$3 }
-  | EOF           { [] }
+  | s EOL
 ;
 
 s:

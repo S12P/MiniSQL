@@ -3,6 +3,7 @@
 open Main
 
 %}
+
 %token <string>    VAL
 %token IN NOT POINT COMMA SELECT FROM WHERE MINUS UNION AS
 %token LT LE GT GE EQ NEQ

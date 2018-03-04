@@ -22,5 +22,6 @@ rule token = parse
   | ">="                      { GE }
   | "="                       { EQ }
   | "AS"                      { AS }
-  | [A-Za-z][A-Za-z0-9_]+     { VAL i }
+  | ['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9''_']+     
+                              { VAL i }
   | eol                       { EOL }

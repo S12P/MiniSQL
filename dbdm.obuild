@@ -1,0 +1,12 @@
+name: minisql
+version: 0.0.1
+description: This is a long description describing properly what the project does.
+licence: MyLicense
+authors: Guillaume Cluzel, Stéphane Pouget
+obuild-ver: 1
+homepage: http://github.com
+
+executable minisql
+      main-is: minisql.ml
+      src-dir: .
+      build-deps: unix, csv

@@ -2,6 +2,12 @@ open Csv
 open DataType
 
 
+let lexbuf c = Lexing.from_channel c
+
+let parse c = Parser.main Lexer.token (lexbuf c)
+
+
+
 let _ =
     let argc = Array.length Sys.argv in
     let tables = StringMap.empty in  (* dictionnaire de toutes les tables *)
@@ -14,10 +20,10 @@ let _ =
         Pervasives.close_in file
     done;
 
-
     while true do
-        print_string "> ";
-        read_int ()
+        Printf.printf "> ";
+        
+        parse stdin
     done;
 
 (* tables : dictionnaires de toutes les tables *)

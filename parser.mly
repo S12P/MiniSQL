@@ -8,27 +8,32 @@ open DataType
 %token IN NOT POINT COMMA SELECT FROM WHERE MINUS UNION AS
 %token LT LE GT GE EQ NEQ AND OR
 %token LPAREN RPAREN
-%token EOL
+%token EOL EOF
 
 
 
 
 %start main
 %type <DataType.requete> main
+%type <DataType.cond> cond and_cond at_cond
+%type <DataType.idstring> att
+%type <DataType.idstring list> atts attd
+%type <string> id
+%type <string list> rels rel
 %%
 
 main:
-  | s EOL
+  | s EOF                                          { $1 }
 ;
 
 s:
-  | SELECT atts FROM rels WHERE cond               { Where ({col: $2, table: $4, cond: $6}) }
-  | LPAREN S RPAREN MINUS LPAREN S RPAREN          { Minus ($2, $6) }
-  | LPAREN S RPAREN UNION LPAREN S RPAREN          { Union ($2, $6) }
+  | SELECT atts FROM rels WHERE cond               { Where ({DataType.col = $2 ; DataType.table = $4; DataType.cond = $6}) }
+  | LPAREN s RPAREN MINUS LPAREN s RPAREN          { Minus ($2, $6) }
+  | LPAREN s RPAREN UNION LPAREN s RPAREN          { Union ($2, $6) }
 ;
 
 atts:
-  | attd COMMA atts                                { ($1) @ ($3) }
+  | attd COMMA atts                                { $1 @ $3 }
   | attd                                           { $1 }
 ;
 

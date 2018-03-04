@@ -4,24 +4,25 @@
 }
 
 rule token = parse
-  | [' ' '\t' '\n']           { token lexbuf }
+  | [' ' '\t']                { token lexbuf }
   | "SELECT"                  { SELECT }
   | "FROM"                    { FROM }
   | "WHERE"                   { WHERE }
   | "MINUS"                   { MINUS }
   | "UNION"                   { UNION }
-  | "("                       { LPAREN }
-  | ")"                       { RPAREN}
-  | ","                       { COMMA}
-  | "."                       { POINT}
+  | '('                       { LPAREN }
+  | ')'                       { RPAREN}
+  | ','                       { COMMA}
+  | '.'                       { POINT}
   | "IN"                      { IN }
   | "NOT"                     { NOT }
-  | "<"                       { LT }
-  | ">"                       { GT }
+  | '<'                       { LT }
+  | '>'                       { GT }
   | "<="                      { LE }
   | ">="                      { GE }
-  | "="                       { EQ }
+  | '='                       { EQ }
   | "AS"                      { AS }
-  | ['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9''_']+     
+  | (['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9''_']+ as i)
                               { VAL i }
-  | eol                       { EOL }
+  | '\n'                       { EOL }
+  | eof                       { EOF }

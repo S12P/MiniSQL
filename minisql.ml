@@ -10,7 +10,18 @@ let _ =
         let file_name = String.sub Sys.argv.(i) 0 (String.index Sys.argv.(i) '.') in
         let csvfile = Table.from_csv (Csv.load_in file) in
         let tables = StringMap.add file_name csvfile tables in
-        print_string ("File " ^ file_name ^ ".csv loaded");
+        print_string ("File " ^ file_name ^ ".csv loaded\n");
         Pervasives.close_in file
     done;
+
+
+    while true do
+        print_string "> ";
+        read_int ()
+    done;
+
+(* tables : dictionnaires de toutes les tables *)
+
+
+
 

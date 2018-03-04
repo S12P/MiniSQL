@@ -5,5 +5,5 @@ opam install obuild csv
 
 
 
-obuild make
+obuild configure
 obuild build

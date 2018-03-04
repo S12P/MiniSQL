@@ -1,6 +1,6 @@
 # Projet de M1 DBDM
 
-## 1 CSV MiniSQL Engine 
+## 1 CSV MiniSQL Engine
 
 This part is due for 2018-03-14 by mail to Emmanuel Coquery.
 
@@ -17,7 +17,7 @@ cartesian product will use nested loops
 all operators will produce data in an eager way
 Note that there are libraries in all proposed languages to read CSV data.
 
-### 1.2 MiniSQL to Relational Algebra Compiler (4 point)
+### 1.2 MiniSQL to Relational Algebra Compiler
 
 Write an MiniSQL to algebra compiler:
 
@@ -32,5 +32,3 @@ Note that these operations may require a renaming of the relations of the subque
 If the WHERE condition is a conjunction of atomic conditions, the NOT IN condition can be transformed into a MINUS statement between the original (sub)query without the NOT IN condition and a transformation of the original (sub)query where the NOT IN condition is replaced by an IN condition.
 
 If the original WHERE condition is more complex it can be transformed in Disjunctive Normal Form an then transformed into =UNION=s before applying the aforementioned transformation.
-
-

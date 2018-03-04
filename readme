@@ -1,9 +1,8 @@
-opam switch 4.06.1
-eval `opam config env`
+Pour installer les modules nécessaires et pour initialiser :
+make init
 
-opam install obuild csv
+Pour compiler :
+make
 
-
-
-obuild configure
-obuild build
+Pour supprimer les fichiers de compilation :
+make clean

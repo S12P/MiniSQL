@@ -36,7 +36,7 @@ rel: id                                         { $1 }
 
 attd:
   | att COMMA attd                              { $1 :: $3 }
-  | att                           w              { [ $1 ] }
+  | att                                         { [ $1 ] }
 ;
 
 att:

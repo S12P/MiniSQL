@@ -1,14 +1,16 @@
+open DataType
+
 type op = Eq | Lt | Gt
 
 type idstring = ID of string * string
-        String of string
+      |  String of string
 
 type cond = And of cond * cond
         | Or of cond * cond
         | Rel of string * op * string
         | In of string * string list
 
-type requete = {col: string list, table: string list, cond: cond}
+type requete = {col: string list; table: string list; cond: cond}
 
 
 let appartient t1 l1 = match l1 with (*fonction utile pour union et minus avec t1 un dictionnaire et l1 une liste de dictionnaire*)
@@ -80,8 +82,6 @@ let where col table cond =
                         in inter2 col table cond numligne l
                       in inter11 col tab cond ((List.length tab)-1) l
   in inter1 col table cond []
-
-
 
 
 (*let select entete csv requete =

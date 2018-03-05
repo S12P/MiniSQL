@@ -31,11 +31,11 @@ let minus l1 l2 = (*fonction qui permet de faire minus avec l1 et l2 liste de di
 let appartient2 x l1 = match l1 with (*fonction utile pour le In dans test_cond*)
   |t::q -> exists(fun key elmt -> x=elmt, t)
 
-(*
-let rec test_cond nbligne cond entete : bool = (*permet de tester la condition du where*)
+
+let rec test_cond nbligne cond : bool = (*permet de tester la condition du where*)
     match cond with
-      | And (c1, c2) -> (test_cond c1 entete) && (test_cond c2 entete)
-      | Or(c1, c2) -> (test_cond c1 entete) || (test_cond c2 entete)
+      | And (c1, c2) -> (test_cond c1 ) && (test_cond c2 )
+      | Or(c1, c2) -> (test_cond c1 ) || (test_cond c2 )
       | Rel(s1, Eq, s2) -> (match s1 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
@@ -65,17 +65,20 @@ let rec test_cond nbligne cond entete : bool = (*permet de tester la condition d
                           true
                       else false
 
-*)
+
 let where col table cond =
   let rec inter1 col table cond l = match table with
     | [] -> l
-    | tab::autretable -> let rec inter2 col table cond l = match col with
-                            | [] -> inter1 col autretable cond l
-                            | co::autreco -> let rec inter3 co table cond l = match cond with
-                              | true -> l::table[nbligne].co ; inter3 autreco table cond l
-                              | false -> inter3 autreco table cond l
-                            in inter3 co table (test_cond (*a finir*)) l
-                        in inter2 col tab cond l
+    | tab::autretable -> let rec inter11 col table cond numligne l = match numligne with
+                          | -1 -> inter1 col autretable cond l
+                          | n ->  let rec inter2 col table cond numl l = match col with
+                            | [] -> inter11 col table cond (numl-1) l
+                            | co::autreco -> let rec inter3 co table cond numll l = match cond with
+                              | true -> l @ [table[numll].co] ; inter3 autreco table cond numll l
+                              | false -> inter3 autreco table cond numll l
+                            in inter3 co table (test_cond numl cond) numl l
+                        in inter2 col table cond numligne l
+                      in inter11 col tab cond ((List.length tab)-1) l
   in inter1 col table cond []
 
 

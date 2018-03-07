@@ -20,5 +20,6 @@ rule token = parse
   | '='                                            { EQ }
   | "AS"                                           { AS }
   | ['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9']* as i                         { VAL i }
-  | ['A'-'Z''a'-'z''\''-''_''0'-'9']+'.csv' as i   { FILE i }
+  | ['A'-'Z''a'-'z''\\''-''_''0'-'9']+".csv" as i   { FILE i }
   | eof                                            { EOF }
+  

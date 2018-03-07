@@ -4,7 +4,7 @@ open DataType
 
 %}
 
-%token <string> VAL
+%token <string> VAL FILE
 %token IN NOT DOT COMMA SELECT FROM WHERE MINUS UNION AS
 %token EQ LT AND OR
 %token LPAREN RPAREN
@@ -24,6 +24,8 @@ main:
 
 s:
   | SELECT attd FROM rels WHERE cond                       { Where ({ col = $2 ; table = $4 ; cond = $6 }) }
+  | LPAREN s RPAREN MINUS LPAREN s RPAREN                  { Minus({ l1 = $2; l2 = $6 }) }
+  | LPAREN s RPAREN UNION LPAREN s RPAREN                  { Union({ l1 = $2; l2 = $6 }) }
   ;
 
 rels:
@@ -60,3 +62,5 @@ at_cond:
   | att EQ att                                     { Rel($1, Eq, $3) }
 ;
 
+filename:
+  | FILE                                            { $1 }

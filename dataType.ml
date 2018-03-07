@@ -139,13 +139,13 @@ module Table = struct
     match cond with
       | And (c1, c2) -> (test_cond line c1 ) && (test_cond line c2 )
       | Or(c1, c2) -> (test_cond line c1 ) || (test_cond line c2 )
-      | Rel(s1, Eq, s2) -> (match s1 with
+      | Rel(s1, Eq, s2) -> true (*match s1 with
                           | ID (table, colonne) -> table[line].colonne
                           | String(x) -> x
                           ) = (match s2 with
                             | ID (table, colonne) -> table[line].colonne (* valeur dans la base de données *)
                             | String(x) -> x
-                          )
+                          *)
       (*| In (s, l) -> if appartient s l then
                           true
                       else false
@@ -155,8 +155,8 @@ module Table = struct
     
     (* Selection de colonnes dans une table selon une table selon une condition 
     On va hacker en fait c'est plus facile ne ne modifiant que le champ head *) 
-    let select (t : t) (col : string array) (cond : cond) : t = 
-        {col = col ; row = filter (fun x y -> test_cond x cond) t.row}
+    let select (t : t) (head : string array) (cond : cond) : t = 
+        {head = head ; row = List.filter (fun x -> test_cond x cond) t.row}
         
     
 end

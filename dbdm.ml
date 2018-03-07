@@ -8,7 +8,7 @@ type idstring = ID of (string StringMap.t list) * string
 type cond = And of cond * cond
         | Or of cond * cond
         | Rel of idstring * op * idstring
-        | In of string * string list
+        | In of string * (string StringMap.t list)
 
 type requete = {col: string list; table: string list; cond: cond}
 
@@ -39,32 +39,32 @@ let rec test_cond table nbligne cond : bool = (*permet de tester la condition du
       | And (c1, c2) -> (test_cond table nbligne c1 ) && (test_cond table nbligne c2 )
       | Or(c1, c2) -> (test_cond table nbligne c1 ) || (test_cond table nbligne c2 )
       | Rel(s1, Eq, s2) -> (match s1 with
-                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne) 
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)
                           | String(x) -> x
                           )
                           =
                           (match s2 with
-                            | ID (table, colonne) -> (List.nth table nbligne).colonne (* valeur dans la base de données *)
+                            | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)  (* valeur dans la base de données *)
                             | String(x) -> x
                           )
-      | Rel(s1, Lt, s2) -> (try let x = (match s1 with
-                          | ID (table, colonne) -> t(List.nth table nbligne).colonne
+      | Rel(s1, Lt, s2) -> ((*try*) let x = (match s1 with
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)
                           | String(x) -> x
-                          ) in int_of_string x with _ -> x)
+                          ) in int_of_string x(*) with _ -> s1)*))
                           <
-                          (try let x = (match s2 with
-                          | ID (table, colonne) -> (List.nth table nbligne).colonne
+                          ((*try*) let x = (match s2 with
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)
                           | String(x) -> x
-                          ) in int_of_string x with _ -> x)
-      | Rel(s1, Gt, s2) -> (try let x = (match s1 with
-                          | ID (table, colonne) -> (List.nth table nbligne).colonne
+                          ) in int_of_string x (*with _ -> s2)*))
+      | Rel(s1, Gt, s2) -> ((*try*) let x = (match s1 with
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)
                           | String(x) -> x
-                          ) in int_of_string x with _ -> x)
+                          ) in int_of_string x (*with _ -> s1*))
                           >
-                          (try let x = (match s2 with
-                          | ID (table, colonne) -> (List.nth table nbligne).colonne
+                          ((*try*) let x = (match s2 with
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne)
                           | String(x) -> x
-                          ) in int_of_string x with _ -> x)
+                          ) in int_of_string x (*with _ -> s2)*))
       | In (s, l) -> if appartient2 s l then
                           true
                       else false
@@ -78,8 +78,8 @@ let where col table cond =
                           | n ->  let rec inter2 col table cond numl l = match col with
                             | [] -> inter11 col table cond (numl-1) l
                             | co::autreco -> let rec inter3 co table cond numll l = match cond with
-                              | true -> l @ [table[numll].co] ; inter3 autreco table cond numll l
-                              | false -> inter3 autreco table cond numll l
+                              | true -> l @ (StringMap.find co (List.nth table numll)) ; inter2 autreco table cond numll l
+                              | false -> inter2 autreco table cond numll l
                             in inter3 co table (test_cond table numl cond) numl l
                         in inter2 col table cond numligne l
                       in inter11 col tab cond ((List.length tab)-1) l

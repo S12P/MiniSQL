@@ -1,9 +1,10 @@
 all:
-	obuild configure; obuild build
+	obuild configure
+	obuild build
 
 init:
-	opam switch 4.06.1;
-	eval `opam config env`;
+	opam switch 4.06.1
+	eval `opam config env`
 	opam install obuild csv
 
 

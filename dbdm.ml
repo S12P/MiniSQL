@@ -77,10 +77,10 @@ let where col table cond =
                           | -1 -> inter1 col autretable cond l
                           | n ->  let rec inter2 col table cond numl l = match col with
                             | [] -> inter11 col table cond (numl-1) l
-                            | co::autreco -> let rec inter3 co table cond numll l = match cond with
+                            | co::autreco -> let rec inter3 co table cond condi numll l = match condi with
                               | true -> l @ (StringMap.find co (List.nth table numll)) ; inter2 autreco table cond numll l
                               | false -> inter2 autreco table cond numll l
-                            in inter3 co table (test_cond table numl cond) numl l
+                            in inter3 co table cond (test_cond table numl cond) numl l
                         in inter2 col table cond numligne l
                       in inter11 col tab cond ((List.length tab)-1) l
   in inter1 col table cond []

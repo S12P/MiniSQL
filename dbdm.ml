@@ -39,7 +39,7 @@ let rec test_cond table nbligne cond : bool = (*permet de tester la condition du
       | And (c1, c2) -> (test_cond table nbligne c1 ) && (test_cond table nbligne c2 )
       | Or(c1, c2) -> (test_cond table nbligne c1 ) || (test_cond table nbligne c2 )
       | Rel(s1, Eq, s2) -> (match s1 with
-                          | ID (table, colonne) -> (List.nth table nbligne).colonne
+                          | ID (table, colonne) -> StringMap.find colonne (List.nth table nbligne) 
                           | String(x) -> x
                           )
                           =

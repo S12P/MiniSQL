@@ -2,7 +2,7 @@ open DataType
 
 type op = Eq | Lt | Gt
 
-type idstring = ID of (string StringMap list) * string
+type idstring = ID of (string StringMap.t list) * string
       |  String of string
 
 type cond = And of cond * cond

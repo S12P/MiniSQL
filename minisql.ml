@@ -1,5 +1,6 @@
 open Csv
 open DataType
+open Dbdm
 
 
 let lexbuf c = Lexing.from_string c
@@ -29,13 +30,9 @@ let _ =
     while true do
         Printf.printf "> ";
         flush_all ();
-        let x = input_line stdin in 
+        let x = input_line stdin in
         let requeteparsee = parse x in
-        relier requeteparsee 
+        relier requeteparsee
     done;
 
 (* tables : dictionnaires de toutes les tables *)
-
-
-
-

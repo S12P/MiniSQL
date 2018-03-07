@@ -14,52 +14,53 @@ type requete = {col: string list; table: string list; cond: cond}
 
 
 let appartient t1 l1 = match l1 with (*fonction utile pour union et minus avec t1 un dictionnaire et l1 une liste de dictionnaire*)
-  |t::q -> equal( fun a b -> a=b, t1, t)
+  |t::q -> StringMap.equal (fun a b -> a=b) t1 t
 
 let union l1 l2 = (*fonction qui permet de faire l'union avec l1 et l2 liste de dictionnaire*)
   let rec inter l1 l2 l = match l2 with
     | [] -> l
-    | t::q when (appartient t l1) -> inter l1 q t::l
-    | t::q -> inter l1 q l
+    | t::q when (appartient t l1) -> inter l1 q l
+    | t::q -> inter l1 q (t::l)
   in inter l1 l2 []
 
 let minus l1 l2 = (*fonction qui permet de faire minus avec l1 et l2 liste de dictionnaire*)
   let rec inter l1 l2 l = match l2 with
     | [] -> l
-    | t::q when not (appartient t l1) -> inter l1 q t::l
-    | t::q -> inter l1 q l
+    | t::q when (appartient t l1) -> inter l1 q l
+    | t::q -> inter l1 q (t::l)
   in inter l1 l2 []
 
 let appartient2 x l1 = match l1 with (*fonction utile pour le In dans test_cond*)
-  |t::q -> exists(fun key elmt -> x=elmt, t)
+  |t::q -> StringMap.exists (fun key elmt -> x=elmt) t
 
 
 let rec test_cond nbligne cond : bool = (*permet de tester la condition du where*)
     match cond with
-      | And (c1, c2) -> (test_cond c1 ) && (test_cond c2 )
-      | Or(c1, c2) -> (test_cond c1 ) || (test_cond c2 )
+      | And (c1, c2) -> (test_cond nbligne c1 ) && (test_cond nbligne c2 )
+      | Or(c1, c2) -> (test_cond nbligne c1 ) || (test_cond nbligne c2 )
       | Rel(s1, Eq, s2) -> (match s1 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
-                          ) = (match s2 with
+                          ) =
+                          (match s2 with
                             | ID (table, colonne) -> table[nbligne].colonne (* valeur dans la base de données *)
                             | String(x) -> x
                           )
-      | Rel(s1, Lt, s2) -> (let x = (match s1 with
+      | Rel(s1, Lt, s2) -> (try let x = (match s1 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
                           ) in int_of_string x with _ -> x)
                           <
-                          (let x = (match s2 with
+                          (try let x = (match s2 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
                           ) in int_of_string x with _ -> x)
-      | Rel(s1, Gt, s2) -> (let x = (match s1 with
+      | Rel(s1, Gt, s2) -> (try let x = (match s1 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
                           ) in int_of_string x with _ -> x)
                           >
-                          (let x = (match s2 with
+                          (try let x = (match s2 with
                           | ID (table, colonne) -> table[nbligne].colonne
                           | String(x) -> x
                           ) in int_of_string x with _ -> x)

@@ -8,6 +8,12 @@ let parse c = Parser.main Lexer.token (lexbuf c)
 
 let scan_string () = Scanf.scanf " %s" (fun x -> x)
 
+let relier requete =
+    match requete with
+    | Where({col = x; table = y; cond = z}) -> where x y z
+    | Union(t1, t2) -> union t1 t2
+    | Minus(t1, t2) -> minus t1 t2
+
 let _ =
     let argc = Array.length Sys.argv in
     let tables = StringMap.empty in  (* dictionnaire de toutes les tables *)
@@ -24,7 +30,8 @@ let _ =
         Printf.printf "> ";
         flush_all ();
         let x = input_line stdin in 
-        parse x
+        let requeteparsee = parse x in
+        relier requeteparsee 
     done;
 
 (* tables : dictionnaires de toutes les tables *)

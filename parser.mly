@@ -24,8 +24,8 @@ main:
 
 s:
   | SELECT attd FROM rels WHERE cond                       { Where ({ col = $2 ; table = $4 ; cond = $6 }) }
-  | LPAREN s RPAREN MINUS LPAREN s RPAREN                  { Minus({ l1 = $2; l2 = $6 }) }
-  | LPAREN s RPAREN UNION LPAREN s RPAREN                  { Union({ l1 = $2; l2 = $6 }) }
+  | LPAREN s RPAREN MINUS LPAREN s RPAREN                  { Minus($2, $6) }
+  | LPAREN s RPAREN UNION LPAREN s RPAREN                  { Union($2, $6) }
   ;
 
 rels:

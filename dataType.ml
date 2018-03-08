@@ -21,7 +21,8 @@ and cond =
       And of cond * cond
     | Or of cond * cond
     | Rel of idstring * op * idstring
-    (*| In of string * string list *)
+    | In of idstring * requete
+    | NotIn of idstring * requete
 
 and liretable = | File of string * string
                 | Req of requete * string

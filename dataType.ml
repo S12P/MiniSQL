@@ -10,7 +10,7 @@ module StringMap = Map.Make(StringTable)
 
 
 
-type op = Eq (*| Lt*)
+type op = Eq | Lt
 
 and idstring = ID of string * string
 
@@ -21,7 +21,8 @@ and cond =
       And of cond * cond
     | Or of cond * cond
     | Rel of idstring * op * idstring
-    (*| In of string * string list *)
+    | In of idstring * requete
+    | NotIn of idstring * requete
 
 and liretable = | File of string * string
                 | Req of requete * string
@@ -138,6 +139,7 @@ module Table = struct
          List.exists (fun x -> StringMap.equal (fun a b -> a = b) elt x) table
 
 
+
     (* Egalité entre 2 tableux *)
     let array_eq t1 t2 =
         if Array.length t1 <> Array.length t2 then false
@@ -187,10 +189,12 @@ module Table = struct
           | Or(c1, c2) -> (test_cond line c1 ) || (test_cond line c2 )
           | Rel(s1, Eq, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                                 (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
-          (*| In (s, l) -> if appartient s l then
-                              true
-                          else false
-            *)
+          | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
+                                (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
+          | In (id, table) -> let ID(x, y) = id in
+                                appartient (StringMap.find (x ^ "." ^ y) line) (compute table)
+          | NotIn(id, table) -> let ID(x, y) = id in
+                                not (appartient (StringMap.find (x ^ "." ^ y) line) (compute table))
 
 
     (* produit cartésien de 2 tables *)
@@ -223,10 +227,6 @@ module Table = struct
         | [] -> failwith "erreur"
         | [t] -> t
         | t1::t2::q -> reduce_table_list ((reduce_table t1 t1)::q)
-
-
-
-
 
 
 

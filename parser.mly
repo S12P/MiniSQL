@@ -33,16 +33,16 @@ rels:
   | rel                                         { [ $1 ] }
 ;
 
-rel: 
+rel:
   | LPAREN s RPAREN id                          { Req($2, $4) }
   | filename id                                 { File($1, $2) }
   ;
-  
+
 atts:
   | attd COMMA atts                             { $1 @ $3 }
   | attd                                        { $1 }
   ;
-  
+
 attd:
   | att AS id                                   { [ Rename($1, $3) ] }
   | att                                         { [ Col($1) ] }
@@ -67,6 +67,9 @@ and_cond:
 
 at_cond:
   | att EQ att                                     { Rel($1, Eq, $3) }
+  | att LT att                                      {Rel($1,Lt, $3)}
+  | att IN LPAREN s RPAREN                          {In($1,$4)}
+  | att NOT IN LPAREN s RPAREN                      { NotIn($1,$5)}
 ;
 
 filename:

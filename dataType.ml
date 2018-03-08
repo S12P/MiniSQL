@@ -69,21 +69,22 @@ module Table = struct
 
 
 
-    (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
+    (* TODO changer cette fonction de merde, elle bugue tout le temps 
+    Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
     let rename_table (table : t) (nom : string) =
         let a = Array.make (Array.length table.head) "" in
-
+        let coln x =
+            String.sub x (String.index x '.') ((String.length x) - (String.index x '.'))
+        in 
         for i = 0 to Array.length table.head - 1 do
-
-            let colname = String.sub table.head.(i) ((String.index table.head.(i) '.')) (String.length table.head.(i) - 1) in
+            let colname = coln table.head.(i) in
             a.(i) <- nom ^ colname
-
         done;
         let rec renamerow l =
             match l with
             | [] -> []
             | t::q -> (StringMap.fold (fun key elt m ->
-                                           let colname = String.sub key (String.index key '.') (String.length key - 1) in
+                                           let colname = coln key in
                                             StringMap.add (nom ^ colname) elt (StringMap.remove key m)) t t) :: (renamerow q)
         in
         {head = a; row = renamerow table.row}
@@ -232,7 +233,7 @@ module Table = struct
     and reduce_table_list ltable = match ltable with
         | [] -> failwith "erreur"
         | [t] -> t
-        | t1::t2::q -> reduce_table_list ((reduce_table t1 t1)::q)
+        | t1::t2::q -> reduce_table_list ((reduce_table t1 t2)::q)
 
 
 
@@ -255,8 +256,8 @@ module Table = struct
             | Req(table, new_name) -> rename_table (compute table) new_name
         in
 
-        let liste_table = List.map lire_table tab in
-
+        let liste_table = List.map lire_table tab in 
+        
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b

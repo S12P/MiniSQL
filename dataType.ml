@@ -72,13 +72,13 @@ module Table = struct
     (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
     let rename_table (table : t) (nom : string) =
         let a = Array.make (Array.length table.head) "" in
-        
+
         for i = 0 to Array.length table.head - 1 do
-               
+
             let colname = String.sub table.head.(i) ((String.index table.head.(i) '.')) (String.length table.head.(i) - 1) in
             a.(i) <- nom ^ colname
-            
-        done; 
+
+        done;
         let rec renamerow l =
             match l with
             | [] -> []
@@ -138,8 +138,12 @@ module Table = struct
 
 
     (* Un élément appartient-il à une table *)
-    let appartient elt table =
+    let appartient elt (table : string StringMap.t list)=
          List.exists (fun x -> StringMap.equal (fun a b -> a = b) elt x) table
+
+    let appartient_bis (elt : string)  (table : t) x y =
+          List.exists (fun a -> (StringMap.find(x^"."^y) a) = elt ) table.row
+
 
 
 
@@ -212,9 +216,9 @@ module Table = struct
           | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                                 (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
           | In (id, table) -> let ID(x, y) = id in
-                                appartient (StringMap.find (x ^ "." ^ y) line) (compute table)
+                                (appartient_bis (StringMap.find (x ^ "." ^ y) line) (compute table)) x y
           | NotIn(id, table) -> let ID(x, y) = id in
-                                not (appartient (StringMap.find (x ^ "." ^ y) line) (compute table))
+                                not (appartient_bis (StringMap.find (x ^ "." ^ y) line) (compute table) x y)
 
 
 
@@ -241,18 +245,18 @@ module Table = struct
         let lire_table t = match t with
             | File(f, new_name) ->
                 begin
-                    
+
                     let file = open_in f in
-                    let file_name = String.sub f 0 (String.index f '.') in 
-                    let tab = rename_table (from_csv (Csv.load_in file) file_name) new_name in 
+                    let file_name = String.sub f 0 (String.index f '.') in
+                    let tab = rename_table (from_csv (Csv.load_in file) file_name) new_name in
                     Pervasives.close_in file;
                     tab
                 end
             | Req(table, new_name) -> rename_table (compute table) new_name
         in
-        
+
         let liste_table = List.map lire_table tab in
-        
+
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b

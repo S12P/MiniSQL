@@ -24,11 +24,16 @@ type cond =
     (*| In of string * string list *)
 
 
+
+
 type requeteWhere =
     {col: column list;   (* liste des colonnes que l'on sélectionne *)
      table: string list;     (* table dans le join *)
      cond: cond;         (* condition dans le where *)
     }
+
+  (*type liretable =  File of string * string
+                  | Req of requeteWhere * string*)
 
 type requete =
     | Where of requeteWhere
@@ -114,17 +119,18 @@ module Table = struct
         else failwith "Union impossible"
 
 
+
     (* Différence de deux tables *)
     let minus (t1 : t) (t2 : t) : t =
-        let rec aux t1 t2 =
-            match t2 with
-            | [] -> t1
-            | t::q when appartient t t1 -> aux (t::t1) q
-            | t::q -> aux t1 q
-        in
-        if array_eq t1.head t2.head then
-            { row = aux t1.row t2.row ; head = t1.head }
-        else failwith "Minus impossible"
+      let rec aux t1 t2 res = match t1 with
+          | [] -> res
+          | t::q when appartient t t2 -> aux q t2 res
+          | t::q -> aux q t2 (t::res)
+    in
+    if array_eq t1.head t2.head then
+        { row = aux t1.row t2.row []; head = t1.head} (*ou est ce que c'est (aux t1.row t2.row []).head*)
+    else failwith "Minus impossible"
+
 
 
 
@@ -142,6 +148,7 @@ module Table = struct
 
 
         (* produit cartésien de 2 tables *)
+
     let rec reduce_table table1 table2 =
         let rec union elt1 elt2 =
             StringMap.fold (fun x y m -> StringMap.add  x y m) elt2 elt1

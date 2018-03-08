@@ -68,6 +68,51 @@ module Table = struct
 
 
 
+    (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
+    let rename_table (table : t) (nom : string) =
+        let a = Array.make (Array.length table.head) "" in
+        for i = 0 to Array.length table.head - 1 do
+            let colname = String.sub table.head.(i) (String.index table.head.(i) '.' + 1) (String.length table.head.(i) - 1) in
+            a.(i) <- colname ^ "." ^ colname
+        done;
+        let rec renamerow l =
+            match l with
+            | [] -> []
+            | t::q -> (StringMap.fold (fun key elt m ->
+                                           let colname = String.sub key (String.index key '.' + 1) (String.length key - 1) in
+                                            StringMap.add (nom ^ "." ^ colname) elt (StringMap.remove key m)) t t) :: (renamerow q)
+        in
+        {head = a; row = renamerow table.row}
+
+
+    (* Change le nom d'une colonne lorsque l'on fait un SELECT A.col AS new_name *)
+    let rename_col (table : t) (col : string) (new_name : string) : t =
+        let tablename = String.sub table.head.(0) 0 (String.index table.head.(0) '.') in
+        let a = Array.make (Array.length table.head) "" in
+        for i = 0 to Array.length table.head - 1 do
+            if table.head.(i) = col then
+                a.(i) <- tablename ^ "." ^ new_name
+            else
+                a.(i) <- table.head.(i)
+        done;
+
+        let renameelt key elt m =
+            if key = col then
+                StringMap.add (tablename ^ "." ^ new_name) elt (StringMap.remove key m)
+            else
+                m
+        in
+        let rec renamerow l =
+            match l with
+            | [] -> []
+            | t::q -> (StringMap.fold renameelt t t) :: (renamerow q)
+        in
+        {head = a; row = renamerow table.row}
+
+
+
+
+
     (* Crée une table à partir d'un CSV *)
     let from_csv csv table_name =
         let rec from_list llabels lvalue =
@@ -148,9 +193,8 @@ module Table = struct
             *)
 
 
-        (* produit cartésien de 2 tables *)
-
-    let rec reduce_table table1 table2 =
+    (* produit cartésien de 2 tables *)
+    let rec reduce_table (table1 : t) (table2 : t) =
         let rec union elt1 elt2 =
             StringMap.fold (fun x y m -> StringMap.add  x y m) elt2 elt1
         in
@@ -166,55 +210,21 @@ module Table = struct
         in
         {row = unify table1.row table2.row; head = Array.append table1.head table2.head}
 
+
+
+    and compute ast =
+        match ast with
+        | Where({col = x; table = y; cond = z}) -> select x y z
+        | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
+        | Minus(ast1, ast2) -> minus (compute ast1) (compute ast2 )
+
     (* produit cartésien d'une liste de tables *)
-    let rec reduce_table_list ltable = match ltable with
+    and reduce_table_list ltable = match ltable with
         | [] -> failwith "erreur"
         | [t] -> t
         | t1::t2::q -> reduce_table_list ((reduce_table t1 t1)::q)
 
 
-
-
-    (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
-    let rename_table (table : t) (nom : string) =
-        let a = Array.make (Array.length table.head) "" in
-        for i = 0 to Array.length table.head - 1 do
-            let colname = String.sub table.head.(i) (String.index table.head.(i) '.' + 1) (String.length table.head.(i) - 1) in
-            a.(i) <- colname ^ "." ^ colname
-        done;
-        let rec renamerow l =
-            match l with
-            | [] -> []
-            | t::q -> (StringMap.fold (fun key elt m ->
-                                           let colname = String.sub key (String.index key '.' + 1) (String.length key - 1) in
-                                            StringMap.add (nom ^ "." ^ colname) elt (StringMap.remove key m)) t t) :: (renamerow q)
-        in
-        {head = a; row = renamerow table.row}
-
-
-    (* Change le nom d'une colonne lorsque l'on fait un SELECT A.col AS new_name *)
-    let rename_col (table : t) (col : string) (new_name : string) : t =
-        let tablename = String.sub table.head.(0) 0 (String.index table.head.(0) '.') in
-        let a = Array.make (Array.length table.head) "" in
-        for i = 0 to Array.length table.head - 1 do
-            if table.head.(i) = col then
-                a.(i) <- tablename ^ "." ^ new_name
-            else
-                a.(i) <- table.head.(i)
-        done;
-
-        let renameelt key elt m =
-            if key = col then
-                StringMap.add (tablename ^ "." ^ new_name) elt (StringMap.remove key m)
-            else
-                m
-        in
-        let rec renamerow l =
-            match l with
-            | [] -> []
-            | t::q -> (StringMap.fold renameelt t t) :: (renamerow q)
-        in
-        {head = a; row = renamerow table.row}
 
 
 
@@ -225,8 +235,20 @@ module Table = struct
 
     (* Selection de colonnes dans une table selon une table selon une condition
     On va hacker en fait c'est plus facile ne ne modifiant que le champ head *)
-    let select (col : column list) (tab : liretable list) (cond : cond) ltable : t =
-        let liste_table = List.map (fun x ->  StringMap.find x ltable) tab in
+    and select (col : column list) (tab : liretable list) (cond : cond) : t =
+        let lire_table t = match t with
+            | File(f, new_name) ->
+                begin 
+                    let file = open_in f in
+                    let file_name = String.sub f 0 (String.index f '.') in
+                    let tab = rename_table (from_csv (Csv.load_in file) file_name) new_name in
+                    Pervasives.close_in file;
+                    tab
+                end
+            | Req(table, new_name) -> rename_table (compute table) new_name
+        in
+        
+        let liste_table = List.map lire_table tab in
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b
@@ -245,6 +267,7 @@ module Table = struct
 
 
 
+
 end
 
 
@@ -252,8 +275,3 @@ end
 
 
 
-let rec compute ast ltable =
-    match ast with
-    | Where({col = x; table = y; cond = z}) -> Table.select x y z ltable
-    | Union(ast1, ast2) -> Table.union (compute ast1 ltable) (compute ast2 ltable)
-    | Minus(ast1, ast2) -> Table.minus (compute ast1 ltable) (compute ast2 ltable)

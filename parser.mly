@@ -7,7 +7,7 @@ open DataType
 %token <string> VAL FILE
 %token IN NOT DOT COMMA SELECT FROM WHERE MINUS UNION AS
 %token EQ LT AND OR
-%token LPAREN RPAREN
+%token LPAREN RPAREN QUOTES
 %token EOF
 
 
@@ -23,7 +23,7 @@ main:
 
 
 s:
-  | SELECT attd FROM rels WHERE cond                       { Where ({ col = $2 ; table = $4 ; cond = $6 }) }
+  | SELECT atts FROM rels WHERE cond                       { Where ({ col = $2 ; table = $4 ; cond = $6 }) }
   | LPAREN s RPAREN MINUS LPAREN s RPAREN                  { Minus($2, $6) }
   | LPAREN s RPAREN UNION LPAREN s RPAREN                  { Union($2, $6) }
   ;
@@ -33,12 +33,19 @@ rels:
   | rel                                         { [ $1 ] }
 ;
 
-rel: id                                         { $1 }
-
-
+rel: 
+  | LPAREN s RPAREN id                          { $4 }
+  | filename id                                 { $2 }
+  ;
+  
+atts:
+  | attd COMMA atts                             { $1 @ $3 }
+  | attd                                        { $1 }
+  ;
+  
 attd:
-  | att COMMA attd                              { $1 :: $3 }
-  | att                                         { [ $1 ] }
+  | att AS id                                   { [ Rename($1, $3) ] }
+  | att                                         { [ Col($1) ] }
 ;
 
 att:
@@ -63,4 +70,5 @@ at_cond:
 ;
 
 filename:
-  | FILE                                            { $1 }
+  | QUOTES FILE QUOTES                                            { $2 }
+  ;

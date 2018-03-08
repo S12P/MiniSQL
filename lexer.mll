@@ -19,7 +19,8 @@ rule token = parse
   | '<'                                            { LT }
   | '='                                            { EQ }
   | "AS"                                           { AS }
-  | ['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9']* as i                         { VAL i }
+  | '"'                                            { QUOTES }
+  | ['A'-'Z''a'-'z']['A'-'Z''a'-'z''0'-'9''_']* as i                         { VAL i }
   | ['A'-'Z''a'-'z''\\''-''_''0'-'9']+".csv" as i   { FILE i }
   | eof                                            { EOF }
   

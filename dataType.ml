@@ -148,6 +148,8 @@ module Table = struct
                                 (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
           | In (id, table) -> let ID(x, y) = id in
                                 appartient (StringMap.find (x ^ "." ^ y) line) (compute table)
+          | NotIn(id, table) -> let ID(x, y) = id in
+                                not (appartient (StringMap.find (x ^ "." ^ y) line) (compute table))
 
 
         (* produit cartésien de 2 tables *)
@@ -217,12 +219,6 @@ module Table = struct
             | t::q -> (StringMap.fold renameelt t t) :: (renamerow q)
         in
         {head = a; row = renamerow table.row}
-
-
-
-
-
-
 
 
     (* Selection de colonnes dans une table selon une table selon une condition

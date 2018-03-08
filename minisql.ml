@@ -1,6 +1,5 @@
 open Csv
 open DataType
-(* open Dbdm *)
 
 
 let lexbuf c = Lexing.from_string c
@@ -22,9 +21,9 @@ let _ =
         print_string ("File " ^ file_name ^ ".csv loaded.\n");
         Pervasives.close_in file
     done;
-    
-    
-    
+
+
+
     while true do
         Printf.printf "> ";
         flush_all ();

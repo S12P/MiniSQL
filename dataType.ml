@@ -32,13 +32,15 @@ type requeteWhere =
      cond: cond;         (* condition dans le where *)
     }
 
-  (*type liretable =  File of string * string
-                  | Req of requeteWhere * string*)
-
 type requete =
-    | Where of requeteWhere
-    | Union of requete * requete
-    | Minus of requete * requete
+        | Where of requeteWhere
+        | Union of requete * requete
+        | Minus of requete * requete
+
+type liretable =  File of string * string
+                  | Req of requete * string
+
+
 
 
 

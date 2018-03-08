@@ -12,35 +12,32 @@ module StringMap = Map.Make(StringTable)
 
 type op = Eq (*| Lt*)
 
-type idstring = ID of string * string
+and idstring = ID of string * string
 
-type column = Col of idstring
+and column = Col of idstring
             | Rename of idstring * string
 
-type cond =
+and cond =
       And of cond * cond
     | Or of cond * cond
     | Rel of idstring * op * idstring
     (*| In of string * string list *)
 
-type liretable = | file of string * string
+and liretable = | File of string * string
                 | Req of requete * string
 
 
-
-type requeteWhere =
+and requeteWhere =
     {col: column list;   (* liste des colonnes que l'on sélectionne *)
-     table: string list;     (* table dans le join *)
+     table: liretable list;     (* table dans le join *)
      cond: cond;         (* condition dans le where *)
     }
 
-type requete =
+and requete =
         | Where of requeteWhere
         | Union of requete * requete
         | Minus of requete * requete
 
-type liretable =  File of string * string
-                  | Req of requete * string
 
 
 
@@ -228,7 +225,7 @@ module Table = struct
 
     (* Selection de colonnes dans une table selon une table selon une condition
     On va hacker en fait c'est plus facile ne ne modifiant que le champ head *)
-    let select (col : column list) (tab : string list) (cond : cond) ltable : t =
+    let select (col : column list) (tab : liretable list) (cond : cond) ltable : t =
         let liste_table = List.map (fun x ->  StringMap.find x ltable) tab in
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b

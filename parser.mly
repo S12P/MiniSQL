@@ -34,8 +34,8 @@ rels:
 ;
 
 rel: 
-  | LPAREN s RPAREN id                          { $4 }
-  | filename id                                 { $2 }
+  | LPAREN s RPAREN id                          { Req($2, $4) }
+  | filename id                                 { File($1, $2) }
   ;
   
 atts:

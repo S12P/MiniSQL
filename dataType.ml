@@ -23,6 +23,8 @@ type cond =
     | Rel of idstring * op * idstring
     (*| In of string * string list *)
 
+type liretable = | file of string * string
+                | Req of requete * string
 
 type requeteWhere =
     {col: column list;   (* liste des colonnes que l'on sélectionne *)

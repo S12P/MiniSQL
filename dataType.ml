@@ -143,7 +143,10 @@ module Table = struct
          List.exists (fun x -> StringMap.equal (fun a b -> a = b) elt x) table
 
     let appartient_bis (elt : string)  (table : t) x y =
-          List.exists (fun a -> (StringMap.find(x^"."^y) a) = elt ) table.row
+        if Array.length table.head <> 1 then
+            failwith "Too much column in the table"
+        else
+            List.exists (fun a -> (StringMap.find table.head.(0) a) = elt ) table.row
 
 
 
@@ -213,7 +216,7 @@ module Table = struct
           | And (c1, c2) -> (test_cond line c1 ) && (test_cond line c2 )
           | Or(c1, c2) -> (test_cond line c1 ) || (test_cond line c2 )
           | Rel(s1, Eq, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
-                                (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
+                            (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
           | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                                 (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
           | In (id, table) -> let ID(x, y) = id in
@@ -262,7 +265,9 @@ module Table = struct
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b
                                            ) col) in
+                                           
         let row = List.filter (fun x -> test_cond x cond) table.row in
+        print_string "ok\n";
         let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
@@ -273,6 +278,62 @@ module Table = struct
 
 
 
+    (* Normalise pour enlever les In *)
+    let rec normalize_req (req : requete) : requete =
+        (* On analyse une condition et on retourne les tables des in, la condition modifiée, et les conditions auxiliaires *)
+        let rec analyse_cond c =
+            match c with
+            | And(c1, c2) -> let tables1, cond1, condaux1 = analyse_cond c1 in
+                             let tables2, cond2, condaux2 = analyse_cond c2 in
+                             let condaux = match condaux1, condaux2 with
+                                | None, None -> None
+                                | None, Some x -> Some x
+                                | Some x, None -> Some x
+                                | Some x, Some y -> Some (And(x, y))
+                             in
+                             tables1 @ tables2, And(cond1, cond2), condaux
+            | Or(c1, c2) -> let tables1, cond1, condaux1 = analyse_cond c1 in
+                            let tables2, cond2, condaux2 = analyse_cond c2 in
+                            let condaux = match condaux1, condaux2 with
+                                | None, None -> None
+                                | None, Some x -> Some x
+                                | Some x, None -> Some x
+                                | Some x, Some y -> Some (And(x, y))
+                            in
+                            tables1 @ tables2, Or(cond1, cond2), condaux
+            | Rel(_,_,_) -> [], c, None
+            | In(id, table) -> let table = normalize_req table in
+                                begin
+                                    match table with
+                                    | Where({col = c; table = ltable ; cond = cond}) -> 
+                                            if (List.length c) = 1 then
+                                                let c = match List.hd c with | Col(x) -> x | Rename(x, _) -> x in
+                                                ltable, Rel(c, Eq, id), Some cond
+                                            else
+                                                failwith "Error in the query"
+                                    | _ -> failwith "I don't how to normalize this query"
+                                end
+            | NotIn (_, _) -> failwith "NotIn arrive bientôt"
+        in
+                        
+        match req with
+        | Union(r1, r2) -> Union(normalize_req r1, normalize_req r2)
+        | Minus(r1, r2) -> Minus(normalize_req r1, normalize_req r2)
+        | Where({col = lc; table = ltable ; cond = cond}) -> 
+                let newtable, newcond, condaux = analyse_cond cond in
+                let t = 
+                    let analyse_col x = 
+                        match x with
+                        | Req(r, name) -> Req(normalize_req r, name)
+                        | _ -> x
+                    in
+                    List.map analyse_col (ltable @ newtable)
+                in
+                let c = match condaux with
+                    | None -> newcond
+                    | Some x -> And(newcond, x)
+                in
+                Where ({ col = lc; table = t; cond = c })
 
 
 

@@ -69,8 +69,8 @@ module Table = struct
 
 
 
-    (* TODO changer cette fonction de merde, elle bugue tout le temps 
-    Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
+    
+    (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
     let rename_table (table : t) (nom : string) =
         let a = Array.make (Array.length table.head) "" in
         let coln x =
@@ -186,6 +186,7 @@ module Table = struct
           | t::q when appartient t t2 -> aux q t2 res
           | t::q -> aux q t2 (t::res)
     in
+    
     if array_eq t1.head t2.head then
         { row = aux t1.row t2.row []; head = t1.head} (*ou est ce que c'est (aux t1.row t2.row []).head*)
     else failwith "Minus impossible"
@@ -198,17 +199,32 @@ module Table = struct
         let rec union elt1 elt2 =
             StringMap.fold (fun x y m -> StringMap.add  x y m) elt2 elt1
         in
-        let rec add elt t =
+        let rec add elt t l =
             match t with
-            | [] -> []
-            | t::q -> (union elt t)::(add elt q)
+            | [] -> l
+            | t::q -> (add elt q ((union elt t)::l))
         in
-        let rec unify t1 t2 =
+        let rec unify t1 t2 l =
             match t1 with
             | [] ->  []
-            | t::q -> (add t t2)@(unify q t2)
+            | t::q -> (unify q t2 ((add t t2 []) @ l))
         in
-        {row = unify table1.row table2.row; head = Array.append table1.head table2.head}
+        let h = Array.append table1.head table2.head in
+        let r = unify table1.row table2.row [] in
+        {row = r; head = h}
+
+
+
+
+        (* produit cartésien d'une liste de tables *)
+    and reduce_table_list ltable = match ltable with
+        | [] -> failwith "erreur"
+        | [t] -> t
+        | t1::t2::q -> reduce_table_list ((reduce_table t1 t2)::q)
+
+
+
+
 
 
     and test_cond line cond : bool = (*permet de tester la condition du where*)
@@ -219,10 +235,7 @@ module Table = struct
                             (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
           | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                                 (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
-          | In (id, table) -> let ID(x, y) = id in
-                                (appartient_bis (StringMap.find (x ^ "." ^ y) line) (compute table)) x y
-          | NotIn(id, table) -> let ID(x, y) = id in
-                                not (appartient_bis (StringMap.find (x ^ "." ^ y) line) (compute table) x y)
+          | _ -> failwith "Impossible normalement"
 
 
 
@@ -230,13 +243,9 @@ module Table = struct
         match ast with
         | Where({col = x; table = y; cond = z}) -> select x y z
         | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
-        | Minus(ast1, ast2) -> minus (compute ast1) (compute ast2 )
+        | Minus(ast1, ast2) -> let a = compute ast1 in let b = compute ast2 in minus a b
 
-    (* produit cartésien d'une liste de tables *)
-    and reduce_table_list ltable = match ltable with
-        | [] -> failwith "erreur"
-        | [t] -> t
-        | t1::t2::q -> reduce_table_list ((reduce_table t1 t2)::q)
+
 
 
 
@@ -258,21 +267,22 @@ module Table = struct
                 end
             | Req(table, new_name) -> rename_table (compute table) new_name
         in
-
-        let liste_table = List.map lire_table tab in 
         
+        let liste_table = List.map lire_table tab in 
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b
-                                           ) col) in
-                                           
+                                           ) col) in                             
         let row = List.filter (fun x -> test_cond x cond) table.row in
-        print_string "ok\n";
         let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
                           col newtable
+
+
+
+
 
 
 
@@ -313,9 +323,8 @@ module Table = struct
                                                 failwith "Error in the query"
                                     | _ -> failwith "I don't how to normalize this query"
                                 end
-            | NotIn (_, _) -> failwith "NotIn arrive bientôt"
-        in
-                        
+            | NotIn (_, _) -> failwith "Il ne devrait à cette étape plus y avoir de NOT IN. Si c'est le cas c'est que la requête ne peut pas être traîtée."
+        in 
         match req with
         | Union(r1, r2) -> Union(normalize_req r1, normalize_req r2)
         | Minus(r1, r2) -> Minus(normalize_req r1, normalize_req r2)
@@ -338,4 +347,75 @@ module Table = struct
 
 
 
+
+
+    (* Vérifie sur une condition est en forme DNF *)
+    let rec check_DNF cond =
+        let rec clause = function
+            | Or(c1, c2) -> (clause c1) && (clause c2)
+            | And(c1, c2) -> false
+            | Rel(_,_,_) -> true
+            | In(_, _) -> true
+            | NotIn(_,_) -> true
+        in 
+        match cond with
+        | And(c1, c2) -> (check_DNF c1) && (check_DNF c1)
+        | _ -> clause cond
+        
+        
+        
+        
+    (* Supprime les notin dans une requete *)    
+    let rec delete_notin req =
+        let rec sup_notin cond =
+            match cond with
+            | And(c1, c2) -> let cond1, cond2, b1 = sup_notin c1 in
+                             let cond3, cond4, b2 = sup_notin c2 in
+                             And(cond1, cond3), And(cond2, cond4), b1 || b2
+            | Or(c1, c2) -> let cond1, cond2, b1 = sup_notin c1 in
+                            let cond3, cond4, b2 = sup_notin c2 in
+                            Or(cond1, cond3), Or(cond2, cond4), b1 || b2
+            | Rel(_,_,_) -> cond, cond, false
+            | In(x,y) -> let y' = delete_notin y in
+                         In(x, y') , In(x, y'), false
+            | NotIn(x,y) -> let y' = delete_notin y in
+                            Rel(x, Eq, x), In(x, y'), true
+        in
+        match req with
+        | Union(r1, r2) -> Union(delete_notin r1, delete_notin r2)
+        | Minus(r1, r2) -> Minus(delete_notin r1, delete_notin r2)
+        | Where({col = lc; table = ltable ; cond = cond}) -> 
+                let cond1, cond2, b = sup_notin cond in
+                let t = 
+                    let analyse_col x = 
+                        match x with
+                        | Req(r, name) -> Req(delete_notin r, name)
+                        | _ -> x
+                    in
+                    List.map analyse_col ltable
+                in
+                
+                match b with
+                | true -> if check_DNF cond then 
+                              Minus(Where({col = lc; table = t; cond = cond1}),
+                                    Where({col = lc; table = t; cond = cond2}))
+                          else failwith "Je ne peux rien faire"
+                | false -> req
+        
+
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -18,7 +18,9 @@ let _ =
         Printf.printf "> ";
         flush_all ();
         let x = input_line stdin in
-        let requeteparsee = Table.normalize_req (parse x) in
+        let requeteparsee = Table.delete_notin (parse x) in
+          
+        let requeteparsee = Table.normalize_req requeteparsee in
         Table.print_table (Table.compute requeteparsee)
     done;
 

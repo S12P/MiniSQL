@@ -66,7 +66,7 @@ and_cond:
 ;
 
 at_cond:
-  | att EQ att                                     { Rel($1, Eq, $3) }
+  | att EQ att                                      { Rel($1, Eq, $3) }
   | att LT att                                      { Rel($1,Lt, $3) }
   | att IN LPAREN s RPAREN                          { In($1,$4) }
   | att NOT IN LPAREN s RPAREN                      { NotIn($1,$5) }

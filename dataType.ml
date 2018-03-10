@@ -69,13 +69,13 @@ module Table = struct
 
 
 
-    
+
     (* Renome une table, typiquement quand on a FILENALE ID, on renome la table FILENAME en ID *)
     let rename_table (table : t) (nom : string) =
         let a = Array.make (Array.length table.head) "" in
         let coln x =
             String.sub x (String.index x '.') ((String.length x) - (String.index x '.'))
-        in 
+        in
         for i = 0 to Array.length table.head - 1 do
             let colname = coln table.head.(i) in
             a.(i) <- nom ^ colname
@@ -187,7 +187,7 @@ module Table = struct
           | t::q -> aux q t2 (t::res)
     in
     if array_eq t1.head t2.head then
-        { row = aux t1.row t2.row []; head = t1.head} (*ou est ce que c'est (aux t1.row t2.row []).head*)
+        { row = aux t1.row t2.row []; head = t1.head} 
     else failwith "Minus impossible"
 
 
@@ -266,12 +266,12 @@ module Table = struct
                 end
             | Req(table, new_name) -> rename_table (compute table) new_name
         in
-        
-        let liste_table = List.map lire_table tab in 
+
+        let liste_table = List.map lire_table tab in
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b
-                                           ) col) in                             
+                                           ) col) in
         let row = List.filter (fun x -> test_cond x cond) table.row in
         let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
@@ -314,7 +314,7 @@ module Table = struct
             | In(id, table) -> let table = normalize_req table in
                                 begin
                                     match table with
-                                    | Where({col = c; table = ltable ; cond = cond}) -> 
+                                    | Where({col = c; table = ltable ; cond = cond}) ->
                                             if (List.length c) = 1 then
                                                 let c = match List.hd c with | Col(x) -> x | Rename(x, _) -> x in
                                                 ltable, Rel(c, Eq, id), Some cond
@@ -323,14 +323,14 @@ module Table = struct
                                     | _ -> failwith "I don't how to normalize this query"
                                 end
             | NotIn (_, _) -> failwith "Il ne devrait à cette étape plus y avoir de NOT IN. Si c'est le cas c'est que la requête ne peut pas être traîtée."
-        in 
+        in
         match req with
         | Union(r1, r2) -> Union(normalize_req r1, normalize_req r2)
         | Minus(r1, r2) -> Minus(normalize_req r1, normalize_req r2)
-        | Where({col = lc; table = ltable ; cond = cond}) -> 
+        | Where({col = lc; table = ltable ; cond = cond}) ->
                 let newtable, newcond, condaux = analyse_cond cond in
-                let t = 
-                    let analyse_col x = 
+                let t =
+                    let analyse_col x =
                         match x with
                         | Req(r, name) -> Req(normalize_req r, name)
                         | _ -> x
@@ -356,15 +356,15 @@ module Table = struct
             | Rel(_,_,_) -> true
             | In(_, _) -> true
             | NotIn(_,_) -> true
-        in 
+        in
         match cond with
         | And(c1, c2) -> (check_DNF c1) && (check_DNF c1)
         | _ -> clause cond
-        
-        
-        
-        
-    (* Supprime les notin dans une requete *)    
+
+
+
+
+    (* Supprime les notin dans une requete *)
     let rec delete_notin req =
         let rec sup_notin cond =
             match cond with
@@ -383,38 +383,23 @@ module Table = struct
         match req with
         | Union(r1, r2) -> Union(delete_notin r1, delete_notin r2)
         | Minus(r1, r2) -> Minus(delete_notin r1, delete_notin r2)
-        | Where({col = lc; table = ltable ; cond = cond}) -> 
+        | Where({col = lc; table = ltable ; cond = cond}) ->
                 let cond1, cond2, b = sup_notin cond in
-                let t = 
-                    let analyse_col x = 
+                let t =
+                    let analyse_col x =
                         match x with
                         | Req(r, name) -> Req(delete_notin r, name)
                         | _ -> x
                     in
                     List.map analyse_col ltable
                 in
-                
+
                 match b with
-                | true -> if check_DNF cond then 
+                | true -> if check_DNF cond then
                               Minus(Where({col = lc; table = t; cond = cond1}),
                                     Where({col = lc; table = t; cond = cond2}))
                           else failwith "Je ne peux rien faire"
                 | false -> req
-        
+
 
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

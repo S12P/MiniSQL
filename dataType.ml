@@ -186,7 +186,6 @@ module Table = struct
           | t::q when appartient t t2 -> aux q t2 res
           | t::q -> aux q t2 (t::res)
     in
-    
     if array_eq t1.head t2.head then
         { row = aux t1.row t2.row []; head = t1.head} (*ou est ce que c'est (aux t1.row t2.row []).head*)
     else failwith "Minus impossible"
@@ -206,7 +205,7 @@ module Table = struct
         in
         let rec unify t1 t2 l =
             match t1 with
-            | [] ->  []
+            | [] ->  l
             | t::q -> (unify q t2 ((add t t2 []) @ l))
         in
         let h = Array.append table1.head table2.head in

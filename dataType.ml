@@ -307,7 +307,7 @@ module Table = struct
                                 | None, None -> None
                                 | None, Some x -> Some x
                                 | Some x, None -> Some x
-                                | Some x, Some y -> Some (And(x, y))
+                                | Some x, Some y -> Some (Or(x, y))
                             in
                             tables1 @ tables2, Or(cond1, cond2), condaux
             | Rel(_,_,_) -> [], c, None

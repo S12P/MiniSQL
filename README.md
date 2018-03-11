@@ -1,6 +1,8 @@
-# Pour installer les modules nécessaires et pour initialiser :
-make init
+# Dependances :
+opam
 
+# Pour installer les modules nécessaires et pour initialiser :
+make install
 
 # Pour compiler :
 make

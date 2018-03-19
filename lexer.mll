@@ -18,6 +18,12 @@ rule token = parse
   | "NOT"                                              { NOT }
   | "AND"                                              { AND }
   | "OR"                                               { OR }
+  | "GROUP"                                            { GROUP }
+  | "BY"                                               { BY }
+  | "ORDER"                                            { ORDER }
+  | "MIN"                                              { MIN }
+  | "MAX"                                              { MAX }
+  | "COUNT"                                            { COUNT }
   | '<'                                                { LT }
   | '='                                                { EQ }
   | "AS"                                               { AS }

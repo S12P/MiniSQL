@@ -26,6 +26,8 @@ s:
   | SELECT atts FROM rels WHERE cond                       { Where ({ col = $2 ; table = $4 ; cond = $6 }) }
   | LPAREN s RPAREN MINUS LPAREN s RPAREN                  { Minus($2, $6) }
   | LPAREN s RPAREN UNION LPAREN s RPAREN                  { Union($2, $6) }
+  | s GROUP BY atts                                        { Group($1, $4) }
+  | s ORDER BY atts                                        { Order($1, $4) }
   ;
 
 rels:
@@ -46,6 +48,9 @@ atts:
 attd:
   | att AS id                                   { [ Rename($1, $3) ] }
   | att                                         { [ Col($1) ] }
+  | MAX LPAREN att RPAREN                       { Max($3) }
+  | MIX LPAREN att RPAREN                       { Min($3) }
+  | COUNT LPAREN att RPAREN                     { Count($3) }
 ;
 
 att:

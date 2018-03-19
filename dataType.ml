@@ -187,7 +187,7 @@ module Table = struct
           | t::q -> aux q t2 (t::res)
     in
     if array_eq t1.head t2.head then
-        { row = aux t1.row t2.row []; head = t1.head} 
+        { row = aux t1.row t2.row []; head = t1.head}
     else failwith "Minus impossible"
 
 
@@ -251,8 +251,7 @@ module Table = struct
 
 
 
-    (* Selection de colonnes dans une table selon une table selon une condition
-    On va hacker en fait c'est plus facile ne ne modifiant que le champ head *)
+    (* Selection de colonnes dans une table selon une table selon une condition *)
     and select (col : column list) (tab : liretable list) (cond : cond) : t =
         let lire_table t = match t with
             | File(f, new_name) ->

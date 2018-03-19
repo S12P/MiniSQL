@@ -17,7 +17,7 @@ rule token = parse
   | "IN"                                               { IN }
   | "NOT"                                              { NOT }
   | "AND"                                              { AND }
-  | "OK"                                               { OR }
+  | "OR"                                               { OR }
   | '<'                                                { LT }
   | '='                                                { EQ }
   | "AS"                                               { AS }

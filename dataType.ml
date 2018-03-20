@@ -305,12 +305,14 @@ module Table = struct
 
      and order (req : t) (col : column list) : t =
           let colr = List.rev col in
+          let comp x y = 
+            if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
+            else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then 0
+            else -1
+        in
             match colr with
               | [] -> req
-              | Col(ID(a, b))::q ->  order (List.sort (fun x y -> if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
-                                              else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then 0
-                                              else -1
-                ) req.row) q
+              | Col(ID(a, b))::q ->  order ({head = req.head; row = List.sort comp req.row}) q
 
 
     and group (req : t) (col : column list) :t = order req col

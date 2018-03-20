@@ -286,7 +286,7 @@ module Table = struct
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
         | Min(ID(a,b)) -> List.fold_left (fun x y -> min x y) (List.hd table.row) table.row
         | Max(ID(a,b)) -> List.fold_left (fun x y -> max x y) (List.hd table.row) table.row
-        | Count(ID(a,b)) -> List.lenght table.row
+        | Count(ID(a,b)) -> List.length table.row
          in
         let newtable = {head = head ; row = row col} in
         List.fold_right (fun a b -> match a with

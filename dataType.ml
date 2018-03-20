@@ -283,9 +283,9 @@ module Table = struct
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
         let row c = match c with
-        | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond)table.row
-        | Min(ID(a,b)) -> 
-        | Max(ID(a,b)) ->
+        | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
+        | Min(ID(a,b)) -> List.fold_left ((fun x y -> min x y) (List.hd table.row) table.row )
+        | Max(ID(a,b)) -> List.fold_left ((fun x y -> max x y) (List.hd table.row) table.row )
         | Count(ID(a,b)) -> List.lenght table.row
          in row col
         let newtable = {head = head ; row = row} in

@@ -249,7 +249,7 @@ module Table = struct
         | Where({col = x; table = y; cond = z}) -> select x y z
         | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
         | Minus(ast1, ast2) -> let a = compute ast1 in let b = compute ast2 in minus a b
-        | Order(ast, col) -> order ast col
+        | Order(ast, col) -> order (compute ast) col
         | Group(ast, col) -> group ast col
 
 
@@ -303,16 +303,14 @@ module Table = struct
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
                           col newtable
 
-
-
      and order (req : t) (col : column list) : t =
           let colr = List.rev col in
             match colr with
               | [] -> req
-              | t::q ->  Order(List.sort((fun x y -> if StringMap.find t x < StringMap.find t y then 1
-                                              else if StringMap.find t x = StringMap.find t y then 0
+              | Col(ID(a, b))::q ->  order (List.sort (fun x y -> if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
+                                              else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then 0
                                               else -1
-                ), req.row), q)
+                ) req.row) q
 
 
     and group (req : t) (col : column list) :t = order req col

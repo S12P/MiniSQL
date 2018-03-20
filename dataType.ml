@@ -126,7 +126,7 @@ module Table = struct
 
 
     (* Crée une table à partir d'un CSV *)
-    let from_csv csv table_name =
+    let from_csv csv table_name =   
         let rec from_list llabels lvalue =
             match llabels, lvalue with
             | [], _ -> StringMap.empty
@@ -284,6 +284,7 @@ module Table = struct
                                            ) col) in
         let row = List.filter (fun x -> test_cond x cond) table.row in
         let newtable = {head = head ; row = row} in
+        (* min max etc *)
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
                                     | Max(ID(_,_)) -> b

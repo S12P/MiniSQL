@@ -294,6 +294,14 @@ module Table = struct
 
 
 
+    and let Order (req : t) (col : column list) : t =
+          let colr = List.rev col in
+            match colr with
+              | [] -> req
+              | t::q ->  Order(List.sort((fun x y -> if StringMap.find t x < StringMap.find t y then 1
+                                              else if StringMap.find t x = StringMap.find t y then 0
+                                              else -1
+                ), req.row), q)
 
 
 

@@ -282,14 +282,12 @@ module Table = struct
                                                                   | Min(ID(a, b)) -> a ^ "." ^ b
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
-        let row c -> match c with
+        let row c = match c with
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond)table.row
-        | Min(ID(a,b)) ->
-        match c with = List.filter (fun x c -> match c with
-                                            | Col(ID(_,_)) -> test_cond x cond
-                                            | Min(ID(a,b)) ->
-
-                                            ) table.row col in
+        | Min(ID(a,b)) -> 
+        | Max(ID(a,b)) ->
+        | Count(ID(a,b)) -> List.lenght table.row
+         in row col
         let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b

@@ -16,6 +16,9 @@ and idstring = ID of string * string
 
 and column = Col of idstring
             | Rename of idstring * string
+            | Max of idstring
+            | Min of idstring
+            | Count of idstring
 
 and cond =
       And of cond * cond
@@ -34,10 +37,14 @@ and requeteWhere =
      cond: cond;         (* condition dans le where *)
     }
 
+and requeteO = requete * column list
+
 and requete =
         | Where of requeteWhere
         | Union of requete * requete
         | Minus of requete * requete
+        | Group of requeteO
+        | Order of requeteO
 
 
 
@@ -243,6 +250,8 @@ module Table = struct
         | Where({col = x; table = y; cond = z}) -> select x y z
         | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
         | Minus(ast1, ast2) -> let a = compute ast1 in let b = compute ast2 in minus a b
+        | Order(ast, col) -> order ast col
+        | Group(ast, col) -> group ast col
 
 
 
@@ -250,8 +259,7 @@ module Table = struct
 
 
 
-
-    (* Selection de colonnes dans une table selon une table selon une condition *)
+    (* Selection de colonnes dans une table selon une table selon une condition*)
     and select (col : column list) (tab : liretable list) (cond : cond) : t =
         let lire_table t = match t with
             | File(f, new_name) ->
@@ -270,11 +278,17 @@ module Table = struct
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
                                                                   | Rename(ID(a,b), new_name) -> a ^ "." ^ b
+                                                                  | Max(ID(a, b)) -> a ^ "." ^ b
+                                                                  | Min(ID(a, b)) -> a ^ "." ^ b
+                                                                  | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
         let row = List.filter (fun x -> test_cond x cond) table.row in
         let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
+                                    | Max(ID(_,_)) -> b
+                                    | Min(ID(_,_)) -> b
+                                    | Count(ID(_,_)) -> b
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
                           col newtable
 

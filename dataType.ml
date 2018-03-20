@@ -282,13 +282,13 @@ module Table = struct
                                                                   | Min(ID(a, b)) -> a ^ "." ^ b
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
-      and  row c = match c with
+      let row c = match c with
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
-        | Min(ID(a,b)) -> List.fold_left ((fun x y -> min x y) (List.hd table.row) table.row )
-        | Max(ID(a,b)) -> List.fold_left ((fun x y -> max x y) (List.hd table.row) table.row )
+        | Min(ID(a,b)) -> List.fold_left (fun x y -> min x y) (List.hd table.row) table.row
+        | Max(ID(a,b)) -> List.fold_left (fun x y -> max x y) (List.hd table.row) table.row
         | Count(ID(a,b)) -> List.lenght table.row
-         in row col
-        let newtable = {head = head ; row = row} in
+         in
+        let newtable = {head = head ; row = row col} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
                                     | Max(ID(_,_)) -> b
@@ -299,7 +299,7 @@ module Table = struct
 
 
 
-     let rec order (req : t) (col : column list) : t =
+     and order (req : t) (col : column list) : t =
           let colr = List.rev col in
             match colr with
               | [] -> req
@@ -309,7 +309,7 @@ module Table = struct
                 ), req.row), q)
 
 
-    let group (req : t) (col : column list) :t -> order req col
+    and group (req : t) (col : column list) :t = order req col
 
 
 

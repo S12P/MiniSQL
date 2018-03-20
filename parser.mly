@@ -6,7 +6,7 @@ open DataType
 
 %token <string> VAL FILE
 %token IN NOT DOT COMMA SELECT FROM WHERE MINUS UNION AS
-%token EQ LT AND OR
+%token EQ LT AND OR GROUP ORDER BY MAX MIN COUNT
 %token LPAREN RPAREN QUOTES
 %token EOF
 
@@ -49,7 +49,7 @@ attd:
   | att AS id                                   { [ Rename($1, $3) ] }
   | att                                         { [ Col($1) ] }
   | MAX LPAREN att RPAREN                       { Max($3) }
-  | MIX LPAREN att RPAREN                       { Min($3) }
+  | MIN LPAREN att RPAREN                       { Min($3) }
   | COUNT LPAREN att RPAREN                     { Count($3) }
 ;
 

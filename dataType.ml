@@ -1,5 +1,4 @@
 
-
 module StringTable =
     struct
         type t = string
@@ -126,7 +125,7 @@ module Table = struct
 
 
     (* Crée une table à partir d'un CSV *)
-    let from_csv csv table_name =   
+    let from_csv csv table_name =
         let rec from_list llabels lvalue =
             match llabels, lvalue with
             | [], _ -> StringMap.empty
@@ -288,15 +287,9 @@ module Table = struct
 
       let row c = match c with
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
-<<<<<<< HEAD
-        | Min(ID(a,b)) -> List.fold_left (fun x y -> min x y) (List.hd table.row) table.row
-        | Max(ID(a,b)) -> List.fold_left (fun x y -> max x y) (List.hd table.row) table.row
-        | Count(ID(a,b)) -> List.length table.row
-=======
-        | Min(ID(a,b)) -> List.fold_left (fun x y -> min (StringMap.find (a ^ "." ^ b) x)  (StringMap.find (a ^ "." b) y)) (List.hd table.row) table.row
-        | Max(ID(a,b)) -> List.fold_left (fun x y -> max (StringMap.find (a ^ "." ^ b) x)  (StringMap.find (a ^ "." b) y)) (List.hd table.row) table.row
+        | Min(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
+        | Max(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
         | Count(ID(a,b)) -> List.lenght table.row
->>>>>>> 8a9bac0225690dedf41fb84757ec3f80cbfbd7cf
          in
         let newtable = {head = head ; row = row col} in
         List.fold_right (fun a b -> match a with

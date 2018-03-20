@@ -287,8 +287,8 @@ module Table = struct
 
       let row c = match c with
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
-        | Min(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
-        | Max(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
+        | Min(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
+        | Max(ID(a,b)) -> List.fold_left (fun x y -> min x  (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row
         | Count(ID(a,b)) -> List.length table.row
          in
         let newtable = {head = head ; row = row col} in

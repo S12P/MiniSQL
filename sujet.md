@@ -32,3 +32,51 @@ Note that these operations may require a renaming of the relations of the subque
 If the WHERE condition is a conjunction of atomic conditions, the NOT IN condition can be transformed into a MINUS statement between the original (sub)query without the NOT IN condition and a transformation of the original (sub)query where the NOT IN condition is replaced by an IN condition.
 
 If the original WHERE condition is more complex it can be transformed in Disjunctive Normal Form an then transformed into =UNION=s before applying the aforementioned transformation.
+
+## 2 A Better Algebra Engine
+
+### 2.1 Collapsing algebra operations
+
+Implement 2 new operators that regroup existing ones:
+
+the ReadSelectProjectRename operator that reads a CSV file, filter lines and transform remaning tuples keeping only the proper attributes after renaming
+the JoinProjectRename operator that combine two relations in a θ-join and transform resulting tuples keeping only the proper attributes after renaming (the θ-join being a cartesian product followed by a selection)
+Try to use algorithms that are more efficient (in cpu and/or memory) than what would habe been done using the simple relational algebra evaluator.
+
+### 2.2 Simple algebra expression optimization
+
+First, write an optimizer that uses relational algebra equivalence rules to:
+
+push down selections
+add projection to discard unneeded attributes as soon as possible
+replace subexpressions using the two new introduced operators
+Next, try to reorder cartesian products to minimize the number of cartesian products that are not immediately restricted by a selection (i.e. that don't correspond to θ-joins).
+
+## 3 Extensions
+
+You can implement some of the following extensions.
+
+### 3.1 ORDER BY
+
+Add an ORDER BY statement to MiniSQL and implement it.
+
+### 3.2 GROUP BY + Aggregation Functions
+
+Add a GROUP BY statement to MiniSQL as well as a some aggregation functions (i.e. MIN, MAX, …) to MiniSQL. Devise a relational algebra operator that correspond to a SELECT ... FROM Single_Relation GROUP BY ... query and implement it. Add the GROUP BY functionality to your engine. You can make some restrictions on the positions where the GROUP BY statement occurs.
+
+You earn 2 additional points for managing subqueries with GROUP BY that are related to the englobing query.
+
+### 3.3 Advanced expressions on atomic values
+
+Manage two atomic data types in your MiniSQL: strings and numbers. Add some builtin functions as well as constants to represent and manipulate these values. Modify the renaming operator so it can also create new attributes computed using atomic value expressions.
+
+### 3.4 Other ideas
+
+Better query optimizer using a cost model
+Factorizing joins over union/minus
+Various join implementations
+Computing meta-data on intermediate results for dynamically choose an appropriate join implementation
+Lazy evaluation (e.g. in the form of iterators) to reduce memory usage
+The possibility to use temporary files if an intermediate result needs to be materialized and doesn't fit in memory (either available memory or any limit you decide)
+Benchmarking various version of your query evaluator
+Any idea you have

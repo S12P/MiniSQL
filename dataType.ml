@@ -282,9 +282,17 @@ module Table = struct
                                                                   | Min(ID(a, b)) -> a ^ "." ^ b
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
-        let row = List.filter (fun x -> test_cond x cond) table.row in
+        (*let row = List.filter (fun x -> test_cond x cond) table.row in
         let newtable = {head = head ; row = row} in
-        (* min max etc *)
+        (* min max etc *)*)
+
+      let row c = match c with
+        | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
+        | Min(ID(a,b)) -> List.fold_left (fun x y -> min (StringMap.find (a ^ "." ^ b) x)  (StringMap.find (a ^ "." b) y)) (List.hd table.row) table.row
+        | Max(ID(a,b)) -> List.fold_left (fun x y -> max (StringMap.find (a ^ "." ^ b) x)  (StringMap.find (a ^ "." b) y)) (List.hd table.row) table.row
+        | Count(ID(a,b)) -> List.lenght table.row
+         in
+        let newtable = {head = head ; row = row col} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
                                     | Max(ID(_,_)) -> b
@@ -295,9 +303,17 @@ module Table = struct
 
 
 
+     and order (req : t) (col : column list) : t =
+          let colr = List.rev col in
+            match colr with
+              | [] -> req
+              | t::q ->  Order(List.sort((fun x y -> if StringMap.find t x < StringMap.find t y then 1
+                                              else if StringMap.find t x = StringMap.find t y then 0
+                                              else -1
+                ), req.row), q)
 
 
-
+    and group (req : t) (col : column list) :t = order req col
 
 
 

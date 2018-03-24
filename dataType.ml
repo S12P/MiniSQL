@@ -8,7 +8,6 @@ module StringTable =
 module StringMap = Map.Make(StringTable)
 
 
-
 type op = Eq | Lt
 
 and idstring = ID of string * string

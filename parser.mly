@@ -48,9 +48,9 @@ atts:
 attd:
   | att AS id                                   { [ Rename($1, $3) ] }
   | att                                         { [ Col($1) ] }
-  | MAX LPAREN att RPAREN                       { Max($3) }
-  | MIN LPAREN att RPAREN                       { Min($3) }
-  | COUNT LPAREN att RPAREN                     { Count($3) }
+  | MAX LPAREN att RPAREN                       { [ Max($3) ] }
+  | MIN LPAREN att RPAREN                       { [ Min($3) ] }
+  | COUNT LPAREN att RPAREN                     { [Count($3)] }
 ;
 
 att:

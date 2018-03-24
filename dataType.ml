@@ -239,7 +239,8 @@ module Table = struct
           | Rel(s1, Eq, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                             (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
           | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
-                                (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
+                               try int_of_string (StringMap.find (x1 ^ "." ^ y1) line) < int_of_string (StringMap.find (x2 ^ "." ^ y2) line)
+                               with (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
           | _ -> failwith "Impossible normalement"
 
 
@@ -250,7 +251,7 @@ module Table = struct
         | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
         | Minus(ast1, ast2) -> let a = compute ast1 in let b = compute ast2 in minus a b
         | Order(ast, col) -> order (compute ast) col
-       | Group(ast, col) -> group (compute ast) col
+        | Group(ast, col) -> group (compute ast) col
 
 
 
@@ -281,6 +282,7 @@ module Table = struct
                                                                   | Min(ID(a, b)) -> a ^ "." ^ b
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
+
         (*let row = List.filter (fun x -> test_cond x cond) table.row in
         let newtable = {head = head ; row = row} in
         (* min max etc *)*)
@@ -289,11 +291,16 @@ module Table = struct
 		
 	  let row2 c = match c with
 	    | Col(ID(_,_)) -> row
-	    | Min(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) 
-	                (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
-	    | Max(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) 
-	                (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
+	    | Min(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row))]
+                    with [StringMap.(empty |> add (a ^ "." ^ b)
+                                (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
+	    | Max(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row))]
+                    with [StringMap.(empty |> add (a ^ "." ^ b)
+                                (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
 	    | Count(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
+
          in
         (* col ? column list ? *)
         let newtable = {head = head ; row = row2 (List.hd col)} in
@@ -320,6 +327,7 @@ module Table = struct
               | [] -> req
               | Col(ID(a, b))::q ->  order ({head = req.head; row = List.sort (comp colr) req.row}) q
               | _ -> failwith ""
+
 
 
     and group (req : t) (col : column list) :t = order req col

@@ -240,7 +240,7 @@ module Table = struct
                             (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
           | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                                try int_of_string (StringMap.find (x1 ^ "." ^ y1) line) < int_of_string (StringMap.find (x2 ^ "." ^ y2) line)
-                               with (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
+                               with _ -> (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
           | _ -> failwith "Impossible normalement"
 
 
@@ -259,7 +259,7 @@ module Table = struct
 
 
 
-    (* Selection de colonnes dans une table selon une table selon une condition*)
+    (* Selection de colonnes dans une table selon une table selon une condition *)
     and select (col : column list) (tab : liretable list) (cond : cond) : t =
         let lire_table t = match t with
             | File(f, new_name) ->
@@ -291,14 +291,18 @@ module Table = struct
 		
 	  let row2 c = match c with
 	    | Col(ID(_,_)) -> row
-	    | Min(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
-                    (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row))]
-                    with [StringMap.(empty |> add (a ^ "." ^ b)
+	    | Min(ID(a,b)) -> begin
+	    			try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (string_of_int (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
+                    with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
                                 (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
-	    | Max(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
-                    (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row))]
-                    with [StringMap.(empty |> add (a ^ "." ^ b)
+                    end
+	    | Max(ID(a,b)) -> begin
+	    			try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (string_of_int (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
+                    with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
                                 (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
+                        end
 	    | Count(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
 
          in

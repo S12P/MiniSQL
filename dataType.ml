@@ -18,6 +18,8 @@ and column = Col of idstring
             | Max of idstring
             | Min of idstring
             | Count of idstring
+            | Avg of idstring
+            | Sum of idstring
 
 and cond =
       And of cond * cond
@@ -281,6 +283,8 @@ module Table = struct
                                                                   | Max(ID(a, b)) -> a ^ "." ^ b
                                                                   | Min(ID(a, b)) -> a ^ "." ^ b
                                                                   | Count(ID(a, b)) -> a ^ "." ^ b
+                                                                  | Avg(ID(a, b)) -> a ^ "." ^ b
+                                                                  | Sum(ID(a, b)) -> a ^ "." ^ b
                                            ) col) in
 
         (*let row = List.filter (fun x -> test_cond x cond) table.row in
@@ -304,7 +308,16 @@ module Table = struct
                                 (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
                         end
 	    | Count(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
-
+      | Sum(ID(a, b)) -> begin
+	    			try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (string_of_int (List.fold_left (fun x y -> x + (int_of_string(StringMap.find (a ^ "." ^ b) y))) 0 row)))]
+                    with _ -> failwith "SUM ne marche pas car ce n'est pas des nombres"
+                    end
+      | Avg(ID(a, b)) -> begin
+              	   try [StringMap.(empty |> add (a ^ "." ^ b)
+                      (string_of_float ((List.fold_left (fun x y -> x +. (float_of_string(StringMap.find (a ^ "." ^ b) y))) 0. row) /. (float_of_int (List.length row)))))]
+                      with _ -> failwith "AVG ne marche pas car ce n'est pas des nombres"
+                  end
          in
         (* col ? column list ? *)
         let newtable = {head = head ; row = row2 (List.hd col)} in
@@ -312,6 +325,8 @@ module Table = struct
                                     | Col(ID(_, _)) -> b
                                     | Max(ID(_,_)) -> b
                                     | Min(ID(_,_)) -> b
+                                    | Avg(ID(_,_)) -> b
+                                    | Sum(ID(_,_)) -> b
                                     | Count(ID(_,_)) -> b
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
                           col newtable

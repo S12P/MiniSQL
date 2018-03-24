@@ -24,6 +24,8 @@ rule token = parse
   | "MIN"                                              { MIN }
   | "MAX"                                              { MAX }
   | "COUNT"                                            { COUNT }
+  | "AVG"                                              { AVG }
+  | "SUM"                                              { SUM }
   | '<'                                                { LT }
   | '='                                                { EQ }
   | "AS"                                               { AS }

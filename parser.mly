@@ -6,7 +6,7 @@ open DataType
 
 %token <string> VAL FILE
 %token IN NOT DOT COMMA SELECT FROM WHERE MINUS UNION AS
-%token EQ LT AND OR GROUP ORDER BY MAX MIN COUNT
+%token EQ LT AND OR GROUP ORDER BY MAX MIN COUNT AVG SUM
 %token LPAREN RPAREN QUOTES
 %token EOF
 
@@ -50,6 +50,8 @@ attd:
   | att                                         { [ Col($1) ] }
   | MAX LPAREN att RPAREN                       { [ Max($3) ] }
   | MIN LPAREN att RPAREN                       { [ Min($3) ] }
+  | AVG LPAREN att RPAREN                       { [ Avg($3) ] }
+  | SUM LPAREN att RPAREN                       { [ Sum($3) ] }
   | COUNT LPAREN att RPAREN                     { [Count($3)] }
 ;
 

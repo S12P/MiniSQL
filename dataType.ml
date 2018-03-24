@@ -288,7 +288,7 @@ module Table = struct
         (* min max etc *)*)
 
 		let row = List.filter (fun x -> test_cond x cond) table.row in
-		
+
 	  let row2 c = match c with
 	    | Col(ID(_,_)) -> row
 	    | Min(ID(a,b)) -> begin
@@ -318,10 +318,10 @@ module Table = struct
 
      and order (req : t) (col : column list) : t =
           let colr = List.rev col in
-          let rec comp col x y = 
+          let rec comp col x y =
           	match col with
           	| [] -> 0
-          	| Col(ID(a, b)) :: q -> 
+          	| Col(ID(a, b)) :: q ->
 		        (if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
 		        else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then comp q x y
 		        else -1)

@@ -284,8 +284,10 @@ module Table = struct
                                            ) col) in
       let row c = match c with
         | Col(ID(_,_)) -> List.filter (fun x -> test_cond x cond) table.row
-        | Min(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b)
-                    (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row))]
+        | Min(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
+                    (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd table.row))) table.row))]
+                    with [StringMap.(empty |> add (a ^ "." ^ b)
+                                (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd table.row)) table.row))]
         | Max(ID(a,b)) -> try [StringMap.(empty |> add (a ^ "." ^ b)
                     (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd table.row))) table.row))]
                     with [StringMap.(empty |> add (a ^ "." ^ b)

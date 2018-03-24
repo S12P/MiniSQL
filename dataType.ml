@@ -8,6 +8,7 @@ module StringTable =
 module StringMap = Map.Make(StringTable)
 
 
+
 type op = Eq | Lt
 
 and idstring = ID of string * string
@@ -121,8 +122,18 @@ module Table = struct
         in
         {head = a; row = renamerow table.row}
 
-
-
+	
+	(* Supprime une colonne de la liste *)
+	let supprime_col (table : t) (col_name : string) : t =
+		let sup ligne =
+			StringMap.remove (col_name) ligne
+		in
+		{head = table.head ; row = List.map sup table.row}
+		
+	let rec supprime_cols (table : t) (cols_name : string list) : t =
+		match cols_name with
+		  [] -> table
+		| t :: q -> supprime_cols (supprime_col table t) q
 
 
     (* Crée une table à partir d'un CSV *)

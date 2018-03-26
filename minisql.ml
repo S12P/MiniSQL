@@ -1,5 +1,7 @@
 open Csv
 open DataType
+open Table
+open Requete
 
 
 let lexbuf c = Lexing.from_string c
@@ -18,10 +20,8 @@ let _ =
         Printf.printf "> ";
         flush_all ();
         let x = input_line stdin in
-        let requeteparsee = Table.delete_notin (parse x) in
+        let requeteparsee = Requete.delete_notin (parse x) in
           
-        let requeteparsee = Table.normalize_req requeteparsee in
+        let requeteparsee = Requete.normalize_req requeteparsee in
         Table.print_table (Table.compute requeteparsee)
     done;
-
-(* tables : dictionnaires de toutes les tables *)

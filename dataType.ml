@@ -360,13 +360,8 @@ module Table = struct
         (* col ? column list ? *)
         let newtable = {head = head ; row = row2 col} in
         List.fold_right (fun a b -> match a with
-                                    | Col(ID(_, _)) -> b
-                                    | Max(ID(_,_)) -> b
-                                    | Min(ID(_,_)) -> b
-                                    | Avg(ID(_,_)) -> b
-                                    | Sum(ID(_,_)) -> b
-                                    | Count(ID(_,_)) -> b
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
+                                    | _ -> b
                           col newtable
 
 

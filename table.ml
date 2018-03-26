@@ -1,5 +1,6 @@
 open DataType
 open Cond
+open Requete
 
 module Table = struct
 
@@ -71,40 +72,7 @@ module Table = struct
         {head = a; row = renamerow table.row}
 
 	
-	(* Supprime une colonne de la liste *)
-	let supprime_col (table : t) (col_name : string) : t =
-		let sup ligne =
-			StringMap.remove (col_name) ligne
-		in
-		{head = table.head ; row = List.map sup table.row}
-		
-	let rec supprime_cols (table : t) (cols_name : string list) : t =
-		match cols_name with
-		  [] -> table
-		| t :: q -> supprime_cols (supprime_col table t) q
-		
-		
-	let rec col_utilisees req : string list =
-		let rec col_cond c = 
-			match c with
-			| And(c1, c2) -> (col_cond c1) @ (col_cond c2)
-			| Or(c1, c2) -> (col_cond c1) @ (col_cond c2)
-			| Rel(ID(a1, b1),_, ID(a2, b2)) -> [a1 ^ "." ^ b1 ; a2 ^ "." ^ b2]
-			| In(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
-			| NotIn(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
-		in
-		let rec col_select l =
-			match l with
-			[] -> []
-			| Col(ID(a, b))::q | Max(ID(a, b))::q | Min(ID(a, b))::q | Count(ID(a, b))::q | Avg(ID(a, b))::q | Sum(ID(a, b))::q -> (a ^ "." ^ b) :: (col_select q)
-            | Rename(ID(a,b), _)::q -> (a ^ "." ^ b) :: (col_select q)
-        in
-		match req with
-		| Union(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
-		| Minus(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
-		| Where(t) -> (col_select t.col) @ (col_cond t.cond)
-		| Group(rq, l) | Order(rq, l) -> (col_utilisees rq) @ (col_select l)
-		
+
 
 
     (* Crée une table à partir d'un CSV *)
@@ -233,7 +201,7 @@ module Table = struct
 	
 	(* Selection de colonnes dans une table selon une table selon une condition *)
     and select (col : column list) (tab : liretable list) (cond : cond) : t =
-        let lcolused = col_utilisees (Where({ col = col ; table = tab ; cond = cond})) in
+        let lcolused = Requete.col_utilisees (Where({ col = col ; table = tab ; cond = cond})) in
         let lire_table t = match t with
             | File(f, new_name) ->
                 begin
@@ -249,13 +217,9 @@ module Table = struct
 
         let liste_table = List.map lire_table tab in
         let table = reduce_table_list liste_table in
-        let head = Array.of_list (List.map (fun x -> match x with | Col(ID(a, b)) -> a ^ "." ^ b
-                                                                  | Rename(ID(a,b), new_name) -> a ^ "." ^ b
-                                                                  | Max(ID(a, b)) -> a ^ "." ^ b
-                                                                  | Min(ID(a, b)) -> a ^ "." ^ b
-                                                                  | Count(ID(a, b)) -> a ^ "." ^ b
-                                                                  | Avg(ID(a, b)) -> a ^ "." ^ b
-                                                                  | Sum(ID(a, b)) -> a ^ "." ^ b
+        let head = Array.of_list (List.map (fun x -> match x with 
+                      								Col(CID(a, b) | Max(ID(a, b)) | Min(ID(a, b)) | Count(ID(a, b)) | Avg(ID(a, b)) | Sum(ID(a, b))) -> a ^ "." ^ b
+                      								| Rename((CID(a,b) | Max(ID(a, b)) | Min(ID(a, b)) | Count(ID(a, b)) | Avg(ID(a, b)) | Sum(ID(a, b))), _) -> a ^ "." ^ b
                                            ) col) in
 
         (*let row = List.filter (fun x -> test_cond x cond) table.row in
@@ -264,7 +228,7 @@ module Table = struct
 
 	let row = List.filter (fun x -> Condition.test_cond x cond) table.row in
 
-		let row2 c = match c with
+		(*let row2 c = match c with
 			| [Min(ID(a,b))] -> begin
 						try [StringMap.(empty |> add (a ^ "." ^ b)
 		                (string_of_int (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
@@ -289,41 +253,39 @@ module Table = struct
                       with _ -> failwith "AVG ne marche pas car ce n'est pas des nombres"
                   end
           | _ -> row 
-         in
+         in*)
         (* col ? column list ? *)
-        let newtable = {head = head ; row = row2 col} in
+        let newtable = {head = head ; row = row} in
         List.fold_right (fun a b -> match a with
-                                    | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
+                                    | Rename(CID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
                                     | _ -> b)
                           col newtable
 
 
 
+	(* effectue le order by *)
+	and order (req : t) (col : column list) : t =
+		let colr = List.rev col in
+		let rec comp col x y =
+			match col with
+			| [] -> 0
+			| Col(CID(a, b)) :: q ->
+				(if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
+				else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then comp q x y
+				else -1)
+			| _ -> failwith ""
+	in
+		match colr with
+		| [] -> req
+		| Col(CID(a, b))::q ->  order ({head = req.head; row = List.sort (comp colr) req.row}) q
+		| _ -> failwith ""
 
 
 
 
 
-
-     and order (req : t) (col : column list) : t =
-          let colr = List.rev col in
-          let rec comp col x y =
-          	match col with
-          	| [] -> 0
-          	| Col(ID(a, b)) :: q ->
-		        (if StringMap.find (a ^ "." ^ b) x < StringMap.find (a ^ "." ^ b) y then 1
-		        else if StringMap.find (a ^ "." ^ b) x = StringMap.find (a ^ "." ^ b) y then comp q x y
-		        else -1)
-	        | _ -> failwith ""
-        in
-            match colr with
-              | [] -> req
-              | Col(ID(a, b))::q ->  order ({head = req.head; row = List.sort (comp colr) req.row}) q
-              | _ -> failwith ""
-
-
-
-    and group (req : t) (col : column list) :t = order req col
+	(* effectue un group by *)
+    and group (req : t) (col : idstring) = req
 
 
 end

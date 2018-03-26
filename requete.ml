@@ -37,7 +37,11 @@ module Requete = struct
                                     match table with
                                     | Where({col = c; table = ltable ; cond = cond}) ->
                                             if (List.length c) = 1 then
-                                                let c = match List.hd c with | Col(x) -> x | Rename(x, _) -> x in
+                                                let c = match List.hd c with 
+                                                		Col(CID(x, y)) -> ID(x, y) 
+                                                		| Rename(CID(x,y), _) -> ID(x, y) 
+                                                		| _ -> failwith "Impossible de traiter la requete avec des fonctions d'agrégations"
+                                                in
                                                 ltable, Rel(c, Eq, id), Some cond
                                             else
                                                 failwith "Error in the query"
@@ -46,6 +50,8 @@ module Requete = struct
             | NotIn (_, _) -> failwith "Il ne devrait à cette étape plus y avoir de NOT IN. Si c'est le cas c'est que la requête ne peut pas être traîtée."
         in
         match req with
+        | Group(req, col) -> Group(normalize_req req, col)
+        | Order(req, col) -> Order(normalize_req req, col)
         | Union(r1, r2) -> Union(normalize_req r1, normalize_req r2)
         | Minus(r1, r2) -> Minus(normalize_req r1, normalize_req r2)
         | Where({col = lc; table = ltable ; cond = cond}) ->
@@ -88,6 +94,8 @@ module Requete = struct
                             Rel(x, Eq, x), In(x, y'), true
         in
         match req with
+        | Group(req, col) -> Group(delete_notin req, col)
+        | Order(req, col) -> Order(delete_notin req, col)
         | Union(r1, r2) -> Union(delete_notin r1, delete_notin r2)
         | Minus(r1, r2) -> Minus(delete_notin r1, delete_notin r2)
         | Where({col = lc; table = ltable ; cond = cond}) ->
@@ -108,5 +116,57 @@ module Requete = struct
                           else failwith "Je ne peux rien faire"
                 | false -> req
 	
+	
+	
+	
+	(* retourne une liste de colonne qui sont utilisées dans la requete *)
+	let rec col_utilisees (req : t) : string list =
+		let rec col_cond c = 
+			match c with
+			| And(c1, c2) -> (col_cond c1) @ (col_cond c2)
+			| Or(c1, c2) -> (col_cond c1) @ (col_cond c2)
+			| Rel(ID(a1, b1),_, ID(a2, b2)) -> [a1 ^ "." ^ b1 ; a2 ^ "." ^ b2]
+			| In(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
+			| NotIn(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
+		in
+		let rec col_select l =
+			match l with
+			[] -> []
+			| Col(CID(a, b))::q | Col(Max(ID(a, b)))::q | Col(Min(ID(a, b)))::q 
+				| Col(Count(ID(a, b)))::q | Col(Avg(ID(a, b)))::q | Col(Sum(ID(a, b)))::q 
+					-> (a ^ "." ^ b) :: (col_select q)
+            | Rename((CID(a,b) | Max(ID(a,b)) |Min(ID(a,b)) |Count(ID(a,b)) |Avg(ID(a,b)) |Sum(ID(a,b))), _)::q -> (a ^ "." ^ b) :: (col_select q)
+        in
+		match req with
+		| Union(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
+		| Minus(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
+		| Where(t) -> (col_select t.col) @ (col_cond t.cond) @ (List.fold_left (fun y x -> match x with | Req(r,_) -> (col_utilisees r) @ y | _ -> y) [] t.table)
+		| Group(rq, ID(a,b)) -> (a ^ "." ^ b) :: (col_utilisees rq)
+		| Order(rq, l) -> (col_utilisees rq) @ (col_select l)
+		
+		
+		
+		
+		
+		
+	(* retourne si la requete contient des fonctions d'agrégation
+	   return n : nombre de fonction d'agrégation présente
+	   0 = absence
+	*)
+	let contient_agregat_fun (req : t) : int =
+		let rec cont_agregat = function
+			| [] -> 0
+			| Col(Max(_) |Min(_) |Count(_) |Avg(_) | Sum(_))::q -> 1 + (cont_agregat q)
+			| Rename((Max(_) |Min(_) |Count(_) |Avg(_) | Sum(_)), _)::q -> 1 + (cont_agregat q)
+			| _::q -> cont_agregat q
+		in
+		match req with
+		| Where({col = col; table = table ; cond = cond}) -> cont_agregat col
+		| _ -> failwith "la fonction contient_agregat doit être utilisée uniquement dans un Select"
+			
+			
+			
+			
+		
 
 end

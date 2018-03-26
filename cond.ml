@@ -32,10 +32,25 @@ module Condition = struct
           | Or(c1, c2) -> (test_cond line c1 ) || (test_cond line c2 )
           | Rel(s1, Eq, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
                             (StringMap.find (x1 ^ "." ^ y1) line) = (StringMap.find (x2 ^ "." ^ y2) line)
-          | Rel(s1, Lt, s2) -> let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
-                               try int_of_string (StringMap.find (x1 ^ "." ^ y1) line) < int_of_string (StringMap.find (x2 ^ "." ^ y2) line)
-                               with _ -> (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
-          | _ -> failwith "Impossible normalement"
-        
+          | Rel(s1, Lt, s2) -> begin
+          						   let ID(x1, y1) = s1 and ID(x2, y2) = s2 in
+                               	   try 
+                               	   	   int_of_string (StringMap.find (x1 ^ "." ^ y1) line) < int_of_string (StringMap.find (x2 ^ "." ^ y2) line)
+                                   with 
+                                       _ -> (StringMap.find (x1 ^ "." ^ y1) line) < (StringMap.find (x2 ^ "." ^ y2) line)
+        					   end
+		 | _ -> failwith "Normalement ce cas est impossible. Il n'y a plus de In ou de Not In à cette étape"
+		 
+		 
+		 
+		 
+	 let cond_to_list (cond : t) =
+	 	match cond with
+	 	| Rel(c1, Eq | Lt, c2) -> cond
+	 	| And(c1, c2) -> (cond_to_list c1) @ (cond_to_list c2)
+	 	| _ -> failwith "Pour l'instant ce cas n'est pas prévu"
+		 
+	
+	
     
 end

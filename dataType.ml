@@ -11,17 +11,20 @@ module StringMap = Map.Make(StringTable)
 
 type op = Eq | Lt
 
-and idstring = ID of string * string
+type idstring = ID of string * string
 
-and column = Col of idstring
-            | Rename of idstring * string
-            | Max of idstring
-            | Min of idstring
-            | Count of idstring
-            | Avg of idstring
-            | Sum of idstring
+type coltype = | CID of string * string
+			   | Max of idstring
+			   | Min of idstring
+		       | Count of idstring
+		       | Avg of idstring
+		       | Sum of idstring
 
-and cond =
+type column = Col of coltype
+            | Rename of coltype * string
+            
+
+type cond =
       And of cond * cond
     | Or of cond * cond
     | Rel of idstring * op * idstring
@@ -38,14 +41,12 @@ and requeteWhere =
      cond: cond;         (* condition dans le where *)
     }
 
-and requeteO = requete * column list
-
 and requete =
         | Where of requeteWhere
         | Union of requete * requete
         | Minus of requete * requete
-        | Group of requeteO
-        | Order of requeteO
+        | Group of requete * idstring        (* group by que sur une seule colonne *)
+        | Order of requete * column list
 
 
 

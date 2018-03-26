@@ -332,33 +332,33 @@ module Table = struct
 		let row = List.filter (fun x -> test_cond x cond) table.row in
 
 	  let row2 c = match c with
-	    | Col(ID(_,_)) -> row
-	    | Min(ID(a,b)) -> begin
+	    | [Min(ID(a,b))] -> begin
 	    			try [StringMap.(empty |> add (a ^ "." ^ b)
                     (string_of_int (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
                     with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
                                 (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
                     end
-	    | Max(ID(a,b)) -> begin
+	    | [Max(ID(a,b))] -> begin
 	    			try [StringMap.(empty |> add (a ^ "." ^ b)
                     (string_of_int (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
                     with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
                                 (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
                         end
-	    | Count(ID(a,b)) -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
-      | Sum(ID(a, b)) -> begin
+	    | [Count(ID(a,b))] -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
+      | [Sum(ID(a, b))] -> begin
 	    			try [StringMap.(empty |> add (a ^ "." ^ b)
                     (string_of_int (List.fold_left (fun x y -> x + (int_of_string(StringMap.find (a ^ "." ^ b) y))) 0 row)))]
                     with _ -> failwith "SUM ne marche pas car ce n'est pas des nombres"
                     end
-      | Avg(ID(a, b)) -> begin
+      | [Avg(ID(a, b))] -> begin
               	   try [StringMap.(empty |> add (a ^ "." ^ b)
                       (string_of_float ((List.fold_left (fun x y -> x +. (float_of_string(StringMap.find (a ^ "." ^ b) y))) 0. row) /. (float_of_int (List.length row)))))]
                       with _ -> failwith "AVG ne marche pas car ce n'est pas des nombres"
                   end
+          | _ -> row 
          in
         (* col ? column list ? *)
-        let newtable = {head = head ; row = row2 (List.hd col)} in
+        let newtable = {head = head ; row = row2 col} in
         List.fold_right (fun a b -> match a with
                                     | Col(ID(_, _)) -> b
                                     | Max(ID(_,_)) -> b
@@ -368,6 +368,14 @@ module Table = struct
                                     | Count(ID(_,_)) -> b
                                     | Rename(ID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name)
                           col newtable
+
+
+
+
+
+
+
+
 
      and order (req : t) (col : column list) : t =
           let colr = List.rev col in

@@ -12,7 +12,7 @@ make
 ## Pour supprimer les fichiers de compilation :
 make clean
 
-Nous avons fait l'ensemble du travail y compris le In et le Not In (pour le Not In nous ne sommes pas sur qu'il fonctionne correctement).
+Nous avons fait l'ensemble du travail dont (AVG, COUNT, MAX, MIN).
 
 dataType.ml : ce fichier contient tout les fonctions et les types.
 

@@ -134,15 +134,42 @@ module Table = struct
 		match cols_name with
 		  [] -> table
 		| t :: q -> supprime_cols (supprime_col table t) q
+		
+		
+	let rec col_utilisees req : string list =
+		let rec col_cond c = 
+			match c with
+			| And(c1, c2) -> (col_cond c1) @ (col_cond c2)
+			| Or(c1, c2) -> (col_cond c1) @ (col_cond c2)
+			| Rel(ID(a1, b1),_, ID(a2, b2)) -> [a1 ^ "." ^ b1 ; a2 ^ "." ^ b2]
+			| In(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
+			| NotIn(ID(a, b), req) -> (a ^ "." ^ b) :: (col_utilisees req)
+		in
+		let rec col_select l =
+			match l with
+			[] -> []
+			| Col(ID(a, b))::q | Max(ID(a, b))::q | Min(ID(a, b))::q | Count(ID(a, b))::q | Avg(ID(a, b))::q | Sum(ID(a, b))::q -> (a ^ "." ^ b) :: (col_select q)
+            | Rename(ID(a,b), _)::q -> (a ^ "." ^ b) :: (col_select q)
+        in
+		match req with
+		| Union(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
+		| Minus(rq1, rq2) -> (col_utilisees rq1) @ (col_utilisees rq2)
+		| Where(t) -> (col_select t.col) @ (col_cond t.cond)
+		| Group(rq, l) | Order(rq, l) -> (col_utilisees rq) @ (col_select l)
+		
 
 
     (* Crée une table à partir d'un CSV *)
-    let from_csv csv table_name =
+    let from_csv csv table_name lcolused =
+    	let rec used col_name lcolused =
+    		List.exists (fun x -> x = col_name) lcolused
+		in
         let rec from_list llabels lvalue =
             match llabels, lvalue with
             | [], _ -> StringMap.empty
             | _, [] -> StringMap.empty
-            | t1::q1, t2::q2 -> StringMap.add (table_name ^ "." ^ t1) t2 (from_list q1 q2)
+            | t1::q1, t2::q2 when not (used (table_name ^ "." ^ t1) lcolused)-> StringMap.add (table_name ^ "." ^ t1) t2 (from_list q1 q2)
+            | t1::q1, t2::q2 -> from_list q1 q2
         in
         let rec aux lvalues llabels=
             match lvalues with
@@ -273,13 +300,14 @@ module Table = struct
 
     (* Selection de colonnes dans une table selon une table selon une condition *)
     and select (col : column list) (tab : liretable list) (cond : cond) : t =
+        let lcolused = col_utilisees (Where({ col = col ; table = tab ; cond = cond})) in
         let lire_table t = match t with
             | File(f, new_name) ->
                 begin
 
                     let file = open_in f in
                     let file_name = String.sub f 0 (String.index f '.') in
-                    let tab = rename_table (from_csv (Csv.load_in file) file_name) new_name in
+                    let tab = rename_table (from_csv (Csv.load_in file) file_name lcolused) new_name in
                     Pervasives.close_in file;
                     tab
                 end

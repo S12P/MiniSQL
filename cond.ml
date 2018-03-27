@@ -44,9 +44,9 @@ module Condition = struct
 		 
 		 
 		 
-	 let cond_to_list (cond : t) =
+	 let rec cond_to_list (cond : t) =
 	 	match cond with
-	 	| Rel(c1, Eq | Lt, c2) -> cond
+	 	| Rel(c1, (Eq | Lt), c2) -> [cond]
 	 	| And(c1, c2) -> (cond_to_list c1) @ (cond_to_list c2)
 	 	| _ -> failwith "Pour l'instant ce cas n'est pas prévu"
 		 

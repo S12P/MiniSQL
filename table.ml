@@ -22,7 +22,7 @@ module Table = struct
             print_newline ()
         in
         print_entete table.head;
-        List.iter print_elt table.row
+        List.iter print_elt (List.rev table.row)
 
 
 
@@ -154,6 +154,72 @@ module Table = struct
 
 
 
+	(* Calcule le résultat d'une fonction d'agrégation dans le cas où il n'y en a qu'une seule *)
+	let compute_agreg fct row =
+		match fct with
+		| Min(ID(a,b)) -> begin
+			try
+				[StringMap.(empty 
+							|> add (a ^ ".Min(" ^ b ^ ")")
+            						(string_of_int (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) 
+            														(int_of_string (StringMap.find (a ^ "." ^ b) 
+            														(List.hd row))) 
+													row)))]
+			with 
+			| _ -> [StringMap.(empty |> add (a ^ ".Min(" ^ b ^ ")")
+                        (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
+        	end
+    	| Max(ID(a,b)) -> begin
+			try
+				[StringMap.(empty 
+							|> add (a ^ ".Max(" ^ b ^ ")")
+            						(string_of_int (List.fold_left (fun x y -> max x (int_of_string(StringMap.find (a ^ "." ^ b) y))) 
+            														(int_of_string (StringMap.find (a ^ "." ^ b) 
+            														(List.hd row))) 
+													row)))]
+			with 
+			| _ -> [StringMap.(empty |> add (a ^ ".Max(" ^ b ^ ")")
+                        (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
+        	end
+				
+		| Count(ID(a,b)) -> [StringMap.(empty |> add (a ^ ".Count(" ^ b ^ ")") (string_of_int (List.length row)))]
+		| Sum(ID(a, b)) -> begin
+			try 
+				[StringMap.(empty 
+							|> add (a ^ ".Sum(" ^ b ^ ")")
+            						(string_of_int (List.fold_left (fun x y -> x + (int_of_string(StringMap.find (a ^ "." ^ b) y))) 
+            														0 row)))]
+            with 
+            	_ -> failwith "Impossible d'utiliser SUM sur une colonne qui ne contient pas que des entiers"
+            end
+    	| Avg(ID(a, b)) -> begin
+      		try 
+      			[StringMap.(empty 
+      						|> add (a ^ ".Sum(" ^ b ^ ")")
+              						(string_of_float ((List.fold_left (fun x y -> x +. (float_of_string(StringMap.find (a ^ "." ^ b) y))) 0. row)
+              											 /. (float_of_int (List.length row)))))]
+        	with 
+        		_ -> failwith "Impossible d'utiliser AVG sur une colonne qui ne continet pas que des entiers"
+      		end
+		| _ -> failwith "Cas impossible normalement"
+
+
+
+
+
+	let rec select_agregate l_col table = 
+		let f x y z = Some y in
+		match l_col with
+		| [] -> StringMap.empty
+		| Col(CID(x, y)) :: q -> StringMap.add (x ^ "." ^ y) (StringMap.find (x ^ "." ^ y) (List.hd table)) (select_agregate q table)
+        | Col(t)::q -> StringMap.union f (List.hd (compute_agreg t table)) (select_agregate q table)
+        | Rename(CID(x, y), new_name) :: q -> StringMap.add (x ^ "." ^ new_name) (StringMap.find (x ^ "." ^ y) (List.hd table)) (select_agregate q table)
+        | Rename(t, _)::q -> StringMap.union f (List.hd (compute_agreg t table)) (select_agregate q table)
+
+
+
+
+
     (* produit cartésien de 2 tables *)
     let rec reduce_table (table1 : t) (table2 : t) =
         let rec union elt1 elt2 =
@@ -191,7 +257,9 @@ module Table = struct
         | Union(ast1, ast2) -> union (compute ast1) (compute ast2)
         | Minus(ast1, ast2) -> let a = compute ast1 in let b = compute ast2 in minus a b
         | Order(ast, col) -> order (compute ast) col
-        | Group(ast, col) -> group (compute ast) col
+        | Group(Where({col = x; table = y; cond = z}), col) -> select ~groupby:col x y z
+        | Group(ast, col) -> failwith "erreur avec le groupby"
+        
 
 
 
@@ -200,7 +268,7 @@ module Table = struct
 
 	
 	(* Selection de colonnes dans une table selon une table selon une condition *)
-    and select (col : column list) (tab : liretable list) (cond : cond) : t =
+    and select ?groupby  (col : column list) (tab : liretable list) (cond : cond)  : t =
         let lcolused = Requete.col_utilisees (Where({ col = col ; table = tab ; cond = cond})) in
         let lire_table t = match t with
             | File(f, new_name) ->
@@ -218,48 +286,77 @@ module Table = struct
         let liste_table = List.map lire_table tab in
         let table = reduce_table_list liste_table in
         let head = Array.of_list (List.map (fun x -> match x with 
-                      								Col(CID(a, b) | Max(ID(a, b)) | Min(ID(a, b)) | Count(ID(a, b)) | Avg(ID(a, b)) | Sum(ID(a, b))) -> a ^ "." ^ b
+                      								Col(CID(a, b)) -> a ^ "." ^ b
+                      								| Col Max(ID(a, b)) -> a ^ ".Max(" ^ b ^ ")"
+                      								| Col Min(ID(a, b)) -> a ^ ".Min(" ^ b ^ ")"
+                      								| Col Count(ID(a, b)) -> a ^ ".Count(" ^ b ^ ")"
+                      								| Col Avg(ID(a, b)) -> a ^ ".Avg(" ^ b ^ ")"
+                      								| Col Sum(ID(a, b)) -> a ^ ".Sum(" ^ b ^ ")"
                       								| Rename((CID(a,b) | Max(ID(a, b)) | Min(ID(a, b)) | Count(ID(a, b)) | Avg(ID(a, b)) | Sum(ID(a, b))), _) -> a ^ "." ^ b
                                            ) col) in
 
-        (*let row = List.filter (fun x -> test_cond x cond) table.row in
-        let newtable = {head = head ; row = row} in
-        (* min max etc *)*)
+		(* colonnes qui correspondent à la condition du where *)
+		let row = List.filter (fun x -> Condition.test_cond x cond) table.row in
+        let nbagregatfun = Requete.nb_agregat_fun (Where({col = col; table = [] ; cond = cond})) in
+        
+        
+        (* Pas de fonction d'agrégation ici *)
+        if nbagregatfun = 0 then
+        	let newtable = {head = head ; row = row} in
+			List.fold_right (fun a b -> match a with
+				                        | Rename(CID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
+				                        | _ -> b)
+				             col newtable
+				             
+				             
+		(* premier cas, on n'a qu'une seule fonction d'agrégat dans la requête, il n'y a pas de group by *)		             
+        else 
+        	begin
+       		if (List.length col) = nbagregatfun && nbagregatfun = 1 then
+				let row = match List.hd col with
+					| Col(x) -> compute_agreg x row
+					| Rename(x, _) -> compute_agreg x row 
+				in
+				let newtable = {head = head ; row = row} in
+				List.fold_right (fun a b -> match a with
+				                            | Rename(CID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
+				                            | Rename(Min(ID(t,c)), new_name) -> rename_col b (t ^ ".Min(" ^ c ^ ")") new_name
+				                            | Rename(Max(ID(t,c)), new_name) -> rename_col b (t ^ ".Max(" ^ c ^ ")") new_name
+				                            | Rename(Avg(ID(t,c)), new_name) -> rename_col b (t ^ ".Avg(" ^ c ^ ")") new_name
+				                            | Rename(Count(ID(t,c)), new_name) -> rename_col b (t ^ ".Count(" ^ c ^ ")") new_name
+				                            | Rename(Sum(ID(t,c)), new_name) -> rename_col b (t ^ ".Sum(" ^ c ^ ")") new_name
+				                            | _ -> b)
+				                  col newtable
+          
+          
+          (* TODO: cas où on a un group by *)
+          else
+          	match groupby with
+          	| None -> failwith "groupby doit être défini dans la fonction Select!"
+          	| Some (ID(x, y)) -> (* x est la colonne sur laquelle on regroupe *)
+          		begin 
+          			let namecol = x ^ "." ^ y in
+                    let rec app l x = match l with | [] -> false | t::_ when t = x -> true | _::q -> app q x in
+          			let rec listlignediff l lf = match l with
+          			| [] -> lf
+          			| t::q when app lf (StringMap.find namecol t) -> listlignediff q lf
+          			| t::q -> listlignediff q ((StringMap.find namecol t)::lf) 
+          			in
+          			let lignes = listlignediff row [] in
+          			let row = List.fold_left (fun l x -> (select_agregate col (List.filter (fun y -> (StringMap.find namecol y) = x ) row) :: l )) [] lignes in
+          			{row; head}
+          		end
+          	
+          	
+          	
+          	(*let newtable = {head ; row} in
+			List.fold_right (fun a b -> match a with
+				                        | Rename(CID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
+				                        | _ -> b)
+				             col newtable*)
+		end
 
-	let row = List.filter (fun x -> Condition.test_cond x cond) table.row in
 
-		(*let row2 c = match c with
-			| [Min(ID(a,b))] -> begin
-						try [StringMap.(empty |> add (a ^ "." ^ b)
-		                (string_of_int (List.fold_left (fun x y -> min x (int_of_string(StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
-		                with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
-		                            (List.fold_left (fun x y -> min x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
-		                end
-			| [Max(ID(a,b))] -> begin
-						try [StringMap.(empty |> add (a ^ "." ^ b)
-		                (string_of_int (List.fold_left (fun x y -> max x (int_of_string (StringMap.find (a ^ "." ^ b) y))) (int_of_string (StringMap.find (a ^ "." ^ b) (List.hd row))) row)))]
-		                with _ -> [StringMap.(empty |> add (a ^ "." ^ b)
-		                            (List.fold_left (fun x y -> max x (StringMap.find (a ^ "." ^ b) y)) (StringMap.find (a ^ "." ^ b) (List.hd row)) row))]
-		                    end
-			| [Count(ID(a,b))] -> [StringMap.(empty |> add (a ^ "." ^ b) (string_of_int (List.length row)))]
-		  | [Sum(ID(a, b))] -> begin
-						try [StringMap.(empty |> add (a ^ "." ^ b)
-		                (string_of_int (List.fold_left (fun x y -> x + (int_of_string(StringMap.find (a ^ "." ^ b) y))) 0 row)))]
-		                with _ -> failwith "SUM ne marche pas car ce n'est pas des nombres"
-		                end
-		  | [Avg(ID(a, b))] -> begin
-		          	   try [StringMap.(empty |> add (a ^ "." ^ b)
-		                  (string_of_float ((List.fold_left (fun x y -> x +. (float_of_string(StringMap.find (a ^ "." ^ b) y))) 0. row) /. (float_of_int (List.length row)))))]
-                      with _ -> failwith "AVG ne marche pas car ce n'est pas des nombres"
-                  end
-          | _ -> row 
-         in*)
-        (* col ? column list ? *)
-        let newtable = {head = head ; row = row} in
-        List.fold_right (fun a b -> match a with
-                                    | Rename(CID(t,c), new_name) -> rename_col b (t ^ "." ^ c) new_name
-                                    | _ -> b)
-                          col newtable
 
 
 
@@ -285,7 +382,8 @@ module Table = struct
 
 
 	(* effectue un group by *)
-    and group (req : t) (col : idstring) = req
+    and group (req : t) (col : idstring) = 
+    	req
 
 
 end

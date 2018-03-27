@@ -153,7 +153,7 @@ module Requete = struct
 	   return n : nombre de fonction d'agrégation présente
 	   0 = absence
 	*)
-	let contient_agregat_fun (req : t) : int =
+	let nb_agregat_fun (req : t) : int =
 		let rec cont_agregat = function
 			| [] -> 0
 			| Col(Max(_) |Min(_) |Count(_) |Avg(_) | Sum(_))::q -> 1 + (cont_agregat q)
@@ -161,12 +161,12 @@ module Requete = struct
 			| _::q -> cont_agregat q
 		in
 		match req with
-		| Where({col = col; table = table ; cond = cond}) -> cont_agregat col
+		| Where({col; table ; cond}) -> cont_agregat col
 		| _ -> failwith "la fonction contient_agregat doit être utilisée uniquement dans un Select"
 			
 			
 			
-			
+	
 		
 
 end

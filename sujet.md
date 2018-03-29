@@ -2,8 +2,6 @@
 
 ## 1 CSV MiniSQL Engine
 
-This part is due for 2018-03-14 by mail to Emmanuel Coquery.
-
 ### 1.1 Relational Algebra Engine Over CSV
 
 First, design a data structures to represent:
